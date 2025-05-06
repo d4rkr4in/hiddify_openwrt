@@ -161,7 +161,7 @@ service pbr restart && service rpcd restart
 
 # Загрузка CIDR списка и настройка PBR
 echo "Загружаем CIDR список и настраиваем PBR..."
-wget -O cidr4.txt "https://drive.google.com/uc?export=download&id=1Z3hRR_2HohRvhIYVEIRsZUjIuNjFjYbC"
+wget -O cidr4.txt https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/cidr4
 
 # Добавляем правило в PBR для CIDR списка
 uci add pbr rule
