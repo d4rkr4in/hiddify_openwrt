@@ -171,18 +171,6 @@ uci set pbr.@rule[-1].dest_file='/etc/pbr/cidr4.txt'
 uci set pbr.@rule[-1].interface='tun0'
 uci commit pbr
 
-# Настройка DNS для всех клиентов на tun0
-echo "Настраиваем DNS для всех клиентов на tun0..."
-uci set dhcp.@dnsmasq[0].noresolv='1'
-uci set dhcp.@dnsmasq[0].localuse='1'
-uci set dhcp.@dnsmasq[0].server='0.0.0.0#53'
-uci set dhcp.@dnsmasq[0].interface='tun0'
-uci commit dhcp
-
 # Перезапуск сервисов
-echo "Применяем изменения и перезапускаем сервисы..."
-service pbr restart
-service dnsmasq restart
-service network restart
-
-echo "Установка завершена!"
+echo "Применяем изменения и перезагружаемся..."
+reboot
