@@ -161,13 +161,13 @@ service pbr restart && service rpcd restart
 
 # Загрузка CIDR списка и настройка PBR
 echo "Загружаем CIDR список и настраиваем PBR..."
-curl -L -o /etc/pbr/cidr4.txt "https://drive.google.com/uc?export=download&id=1Z3hRR_2HohRvhIYVEIRsZUjIuNjFjYbC"
+wget -O cidr4.txt "https://drive.google.com/uc?export=download&id=1Z3hRR_2HohRvhIYVEIRsZUjIuNjFjYbC"
 
 # Добавляем правило в PBR для CIDR списка
 uci add pbr rule
 uci set pbr.@rule[-1].name='CIDR4_Rules'
 uci set pbr.@rule[-1].enabled='1'
-uci set pbr.@rule[-1].dest_file='/etc/pbr/cidr4.txt'
+uci set pbr.@rule[-1].dest_file='/root/cidr4.txt'
 uci set pbr.@rule[-1].interface='tun0'
 uci commit pbr
 
