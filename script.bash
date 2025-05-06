@@ -82,7 +82,7 @@ service HiddifyCli start && service HiddifyCli status
 
 # Установка Tun2Socks
 echo "Устанавливаем Tun2Socks..."
-wget https://github.com/xjasonlyu/tun2socks/releases/download/v2.5.2/tun2socks-linux-arm64.zip
+wget -O tun2socks-linux-arm64.zip https://github.com/xjasonlyu/tun2socks/releases/download/v2.5.2/tun2socks-linux-arm64.zip
 opkg update && opkg install unzip
 unzip tun2socks-linux-arm64.zip
 mv tun2socks-linux-arm64 /usr/bin/tun2socks
