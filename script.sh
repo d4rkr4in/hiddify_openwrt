@@ -6,12 +6,14 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
-# Запрос ссылки на подписку
-read -p "Введите ССЫЛКУ_НА_ПОДПИСКУ: " SUBSCRIPTION_LINK
-if [ -z "$SUBSCRIPTION_LINK" ]; then
+# Цикл запроса ссылки на подписку, пока она пуста
+while true; do
+  read -p "Введите ССЫЛКУ_НА_ПОДПИСКУ: " SUBSCRIPTION_LINK
+  if [ -n "$SUBSCRIPTION_LINK" ]; then
+    break
+  fi
   echo "Ошибка: Ссылка на подписку не может быть пустой" >&2
-  exit 1
-fi
+done
 
 echo "Начинаем установку HiddifyCli и настройку окружения..."
 
