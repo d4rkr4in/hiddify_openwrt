@@ -123,31 +123,29 @@ EOF
 
 # Создание init скрипта для tun2socks
 echo "Создаем init скрипт для tun2socks..."
+PROTO="socks5"
+HOST="localhost"
+PORT="12334"
+PROG="/usr/bin/tun2socks"
+IF="tun0"
+
 cat > /etc/init.d/tun2socks <<EOF
 #!/bin/sh /etc/rc.common
 
 USE_PROCD=1
-
-# starts after network starts
 START=45
-# stops before networking stops
 STOP=89
 
-PROG=/usr/bin/tun2socks
-IF="tun0"
-PROTO="socks5"
-HOST="localhost"
-PORT="12334"
-
 start_service() {
-        procd_open_instance
-        procd_set_param command "$PROG" -device "$IF" -proxy "$PROTO"://"$HOST":"$PORT"
-        procd_set_param stdout 1
-        procd_set_param stderr 1
-        procd_set_param respawn
-        procd_close_instance
+    procd_open_instance
+    procd_set_param command "$PROG" -device "$IF" -proxy "$PROTO"://"$HOST":"$PORT"
+    procd_set_param stdout 1
+    procd_set_param stderr 1
+    procd_set_param respawn
+    procd_close_instance
 }
 EOF
+
 
 chmod 755 /etc/init.d/tun2socks
 service tun2socks start
@@ -168,10 +166,17 @@ wget -O cidr4.txt https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/ref
 
 # Добавляем правило в PBR для CIDR списка
 uci add pbr rule
-uci set pbr.@rule[-1].name='CIDR4_Rules'
+uci set pbr.@rule[-1].name='CIDR4'
 uci set pbr.@rule[-1].enabled='1'
-uci set pbr.@rule[-1].dest_file='/root/cidr4.txt'
+uci set pbr.@rule[-1].dest_addr='file:///root/cidr4.txt'
 uci set pbr.@rule[-1].interface='tun0'
+uci commit pbr
+
+uci add pbr rule
+uci set pbr.@rule[-1].name='torrents'
+uci set pbr.@rule[-1].enabled='1'
+uci set pbr.@rule[-1].dest_port='6881-6889'
+uci set pbr.@rule[-1].interface='wan'
 uci commit pbr
 
 # Перезапуск сервисов
