@@ -151,6 +151,11 @@ chmod 755 /etc/init.d/tun2socks
 service tun2socks start
 service HiddifyCli enable && service tun2socks enable
 
+# Меняем DNS в wan на Hiddify
+uci set network.wan.peerdns='0'
+uci set network.wan.dns='172.16.250.1'
+uci commit network
+
 # Установка PBR
 echo "Устанавливаем Policy Based Routing..."
 opkg install pbr luci-app-pbr
@@ -186,6 +191,13 @@ uci set pbr.@dns_policy[-1].enabled='1'
 
 uci commit pbr
 /etc/init.d/pbr restart
+
+# Перезагрузка в 4 утра
+echo "Добавляем ежедневную перезагрузку в 4:00 в crontab..."
+CRON_JOB="0 4 * * * /sbin/reboot"
+# Добавляем, если такой строки ещё нет
+( crontab -l 2>/dev/null | grep -Fxq "$CRON_JOB" ) || ( crontab -l 2>/dev/null; echo "$CRON_JOB" ) | crontab -
+
 
 # Перезапуск сервисов
 echo "Применяем изменения и перезагружаемся..."
