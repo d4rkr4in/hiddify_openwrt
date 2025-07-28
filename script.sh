@@ -165,19 +165,27 @@ echo "Загружаем CIDR список и настраиваем PBR..."
 wget -O cidr4.txt https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/cidr4
 
 # Добавляем правило в PBR для CIDR списка
-uci add pbr rule
-uci set pbr.@rule[-1].name='CIDR4'
-uci set pbr.@rule[-1].enabled='1'
-uci set pbr.@rule[-1].dest_addr='file:///root/cidr4.txt'
-uci set pbr.@rule[-1].interface='tun0'
-uci commit pbr
+uci add pbr policy
+uci set pbr.@policy[-1].name='torrents'
+uci set pbr.@policy[-1].src_port='6881-6889'
+uci set pbr.@policy[-1].dest_port='6881-6889'
+uci set pbr.@policy[-1].interface='wan'
+uci set pbr.@policy[-1].enabled='1'
 
-uci add pbr rule
-uci set pbr.@rule[-1].name='torrents'
-uci set pbr.@rule[-1].enabled='1'
-uci set pbr.@rule[-1].dest_port='6881-6889'
-uci set pbr.@rule[-1].interface='wan'
+uci add pbr policy
+uci set pbr.@policy[-1].name='cidr4'
+uci set pbr.@policy[-1].dest_addr='file:///root/cidr4.txt'
+uci set pbr.@policy[-1].interface='tun0'
+uci set pbr.@policy[-1].enabled='1'
+
+uci add pbr dns_policy
+uci set pbr.@dns_policy[-1].name='dns'
+uci set pbr.@dns_policy[-1].src_addr='0.0.0.0'
+uci set pbr.@dns_policy[-1].dest_dns='tun0'
+uci set pbr.@dns_policy[-1].enabled='1'
+
 uci commit pbr
+/etc/init.d/pbr restart
 
 # Перезапуск сервисов
 echo "Применяем изменения и перезагружаемся..."
