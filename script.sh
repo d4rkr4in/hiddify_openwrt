@@ -88,11 +88,6 @@ wget -O tun2socks-linux-arm64.zip https://github.com/xjasonlyu/tun2socks/release
 opkg update && opkg install unzip
 unzip tun2socks-linux-arm64.zip
 mv tun2socks-linux-arm64 /usr/bin/tun2socks
-opkg install kmod-tun && opkg install dnsmasq-full
-uci add_list dhcp.@dnsmasq[0].server='95.85.95.85'
-uci add_list dhcp.@dnsmasq[0].server='8.8.8.8'
-uci add_list dhcp.@dnsmasq[0].server='1.1.1.1'
-uci commit dhcp
 
 # Настройка сети
 echo "Настраиваем сетевой интерфейс..."
