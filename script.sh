@@ -192,6 +192,7 @@ uci set pbr.@dns_policy[-1].dest_dns='tun0'
 uci set pbr.@dns_policy[-1].enabled='1'
 
 uci commit pbr
+/etc/init.d/pbr enabled
 /etc/init.d/pbr restart
 
 # Загрузка скрипта check_hiddify.sh
