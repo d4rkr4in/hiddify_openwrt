@@ -194,12 +194,19 @@ uci set pbr.@dns_policy[-1].enabled='1'
 uci commit pbr
 /etc/init.d/pbr restart
 
-# Перезагрузка в 4 утра
-echo "Добавляем ежедневную перезагрузку в 4:00 в crontab..."
-CRON_JOB="0 4 * * * /sbin/reboot"
+# Загрузка скрипта check_hiddify.sh
+echo "Скачиваем скрипт check_hiddify.sh..."
+wget -q -O /usr/bin/check_hiddify.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/check_hiddify.sh
+
+# Делаем скрипт исполняемым
+chmod +x /usr/bin/check_hiddify.sh
+
+# Добавляем выполнение скрипта в crontab каждые 3 минуты
+CRON_JOB="*/3 * * * * /usr/bin/check_hiddify.sh"
+echo "Добавляем задание в crontab для запуска каждые 3 минуты..."
+
 # Добавляем, если такой строки ещё нет
 ( crontab -l 2>/dev/null | grep -Fxq "$CRON_JOB" ) || ( crontab -l 2>/dev/null; echo "$CRON_JOB" ) | crontab -
-
 
 # Перезапуск сервисов
 echo "Применяем изменения и перезагружаемся..."
