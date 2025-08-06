@@ -148,6 +148,9 @@ EOF
 chmod 755 /etc/init.d/tun2socks
 service tun2socks start
 service HiddifyCli enable && service tun2socks enable
+opkg install kmod-tun && opkg install dnsmasq-full
+uci add_list dhcp.@dnsmasq[0].server='95.85.95.85'
+uci commit dhcp
 
 # Меняем DNS в wan на Hiddify
 uci set network.wan.peerdns='0'
