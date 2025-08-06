@@ -174,7 +174,6 @@ wget -O cidr4.txt https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/ref
 uci add pbr policy
 uci set pbr.@policy[-1].name='torrents'
 uci set pbr.@policy[-1].src_port='6881-6889'
-uci set pbr.@policy[-1].dest_port='6881-6889'
 uci set pbr.@policy[-1].interface='wan'
 uci set pbr.@policy[-1].enabled='1'
 
