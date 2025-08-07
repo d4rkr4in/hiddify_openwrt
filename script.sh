@@ -182,7 +182,7 @@ uci commit pbr
 
 # Загрузка CIDR списка и настройка PBR
 echo "Загружаем CIDR список и настраиваем PBR..."
-wget -O cidr4.txt https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/cidr4
+wget -O cidr4.txt https://iplist.opencck.org/?format=comma&data=cidr4
 
 # Добавляем правило в PBR для CIDR списка
 uci add pbr policy
