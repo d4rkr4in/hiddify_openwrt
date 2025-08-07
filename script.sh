@@ -217,7 +217,7 @@ wget -q -O /usr/bin/check_hiddify.sh https://raw.githubusercontent.com/d4rkr4in/
 chmod +x /usr/bin/check_hiddify.sh
 
 # Задания для crontab
-CRON_CHECK_HIDDIFY="*/3 * * * * /usr/bin/check_hiddify.sh"
+CRON_CHECK_HIDDIFY="*/2 * * * * /usr/bin/check_hiddify.sh"
 CRON_REBOOT="0 4 * * * /sbin/reboot"
 
 echo "Добавляем задания в crontab..."
@@ -226,7 +226,7 @@ echo "Добавляем задания в crontab..."
 ( crontab -l 2>/dev/null | grep -Fxq "$CRON_CHECK_HIDDIFY" ) || ( crontab -l 2>/dev/null; echo "$CRON_CHECK_HIDDIFY" ) | crontab -
 ( crontab -l 2>/dev/null | grep -Fxq "$CRON_REBOOT" ) || ( crontab -l 2>/dev/null; echo "$CRON_REBOOT" ) | crontab -
 
-echo "Готово: check_hiddify.sh будет запускаться каждые 3 минуты, а система — перезагружаться в 4 утра."
+echo "Готово: check_hiddify.sh будет запускаться каждые 2 минуты, а система — перезагружаться в 4 утра."
 
 
 # Перезапуск сервисов
