@@ -188,9 +188,12 @@ uci set pbr.@dns_policy[-1].name='dns'
 uci set pbr.@dns_policy[-1].src_addr='0.0.0.0'
 uci set pbr.@dns_policy[-1].dest_dns='tun0'
 uci set pbr.@dns_policy[-1].enabled='1'
-
 uci commit pbr
-/etc/init.d/pbr restart
+
+CMD='(sleep 15 && /etc/init.d/pbr restart) &'
+FILE=/etc/rc.local
+
+grep -Fq "$CMD" $FILE || sed -i "/exit 0/i $CMD" $FILE
 
 # Загрузка скрипта check_hiddify.sh
 echo "Скачиваем скрипт check_hiddify.sh..."
