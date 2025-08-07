@@ -165,9 +165,8 @@ uci commit pbr
 uci set dhcp.lan.force='1'
 uci commit dhcp
 
-echo "== Удаление всех PBR правил =="
-
 # Удаление всех policy и dns_policy правил
+echo "== Удаление всех PBR правил =="
 INDEX=0
 while uci get pbr.@policy[$INDEX] >/dev/null 2>&1; do
   uci delete pbr.@policy[$INDEX]
@@ -177,7 +176,6 @@ INDEX=0
 while uci get pbr.@dns_policy[$INDEX] >/dev/null 2>&1; do
   uci delete pbr.@dns_policy[$INDEX]
 done
-
 uci commit pbr
 
 # Загрузка CIDR списка и настройка PBR
@@ -217,18 +215,15 @@ wget -q -O /usr/bin/check_hiddify.sh https://raw.githubusercontent.com/d4rkr4in/
 chmod +x /usr/bin/check_hiddify.sh
 
 # Задания для crontab
+echo "Добавляем задания в crontab..."
 CRON_CHECK_HIDDIFY="*/2 * * * * /usr/bin/check_hiddify.sh"
 CRON_REBOOT="0 4 * * * /sbin/reboot"
-
-echo "Добавляем задания в crontab..."
 
 # Добавляем оба задания, если их ещё нет
 ( crontab -l 2>/dev/null | grep -Fxq "$CRON_CHECK_HIDDIFY" ) || ( crontab -l 2>/dev/null; echo "$CRON_CHECK_HIDDIFY" ) | crontab -
 ( crontab -l 2>/dev/null | grep -Fxq "$CRON_REBOOT" ) || ( crontab -l 2>/dev/null; echo "$CRON_REBOOT" ) | crontab -
 
 echo "Готово: check_hiddify.sh будет запускаться каждые 2 минуты, а система — перезагружаться в 4 утра."
-
-
 # Перезапуск сервисов
 echo "Применяем изменения и перезагружаемся..."
 reboot
