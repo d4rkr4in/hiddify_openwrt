@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Отключаем ipv6
+# Отключаем ipv6 через скрипт ipv6_off.sh
 wget -O ipv6_off.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/ipv6_off.sh
 chmod +x ipv6_off.sh
 ./ipv6_off.sh
