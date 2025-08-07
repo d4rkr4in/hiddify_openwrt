@@ -164,7 +164,21 @@ uci set pbr.config.enabled="1"
 uci commit pbr
 uci set dhcp.lan.force='1'
 uci commit dhcp
-service pbr restart && service rpcd restart
+
+echo "== Удаление всех PBR правил =="
+
+# Удаление всех policy и dns_policy правил
+INDEX=0
+while uci get pbr.@policy[$INDEX] >/dev/null 2>&1; do
+  uci delete pbr.@policy[$INDEX]
+done
+
+INDEX=0
+while uci get pbr.@dns_policy[$INDEX] >/dev/null 2>&1; do
+  uci delete pbr.@dns_policy[$INDEX]
+done
+
+uci commit pbr
 
 # Загрузка CIDR списка и настройка PBR
 echo "Загружаем CIDR список и настраиваем PBR..."
