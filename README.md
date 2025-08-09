@@ -1,4 +1,4 @@
-Ready script for complete installation Hiddify with Tun2Socks and Policy Routing on Openwrt Router
+Ready script for complete installation Hiddify with Tun2Socks and Policy Routing rules on Openwrt Router
 
 1. Run this command via ssh:
 
