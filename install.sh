@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Устанавливаем тему OpenWrt 2020
 opkg install luci-theme-openwrt-2020
