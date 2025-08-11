@@ -1,10 +1,7 @@
 #!/bin/sh
 
-# Устанавливаем тему OpenWrt 2020
-opkg install luci-theme-openwrt-2020
-
-# Устанавливаем утилиту SQM (управление качеством обслуживания)
-opkg install luci-app-sqm
+# Устанавливаем нужные пакеты
+opkg install curl nano luci-app-sqm luci-theme-openwrt-2020
 
 # Отключаем ipv6 через скрипт ipv6_off.sh
 wget -O ipv6_off.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/ipv6_off.sh
