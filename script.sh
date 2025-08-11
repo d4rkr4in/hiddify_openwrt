@@ -157,11 +157,6 @@ opkg install kmod-tun && opkg install dnsmasq-full
 uci add_list dhcp.@dnsmasq[0].server='95.85.95.85'
 uci commit dhcp
 
-# Меняем DNS в wan на Hiddify
-uci set network.wan.peerdns='0'
-uci set network.wan.dns='172.16.250.1'
-uci commit network
-
 # Установка PBR
 echo "Устанавливаем Policy Based Routing..."
 opkg install pbr luci-app-pbr
