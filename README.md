@@ -2,7 +2,7 @@ Ready script for complete installation Hiddify with Tun2Socks and Policy Routing
 
 1. Run this command via ssh:
 
-```opkg update && opkg install curl nano wget && wget -qO- https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/main/install.sh | tr -d '\r' | sh```
+```opkg update && opkg install curl nano wget && wget -qO- https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/main/install.sh | sh```
 
 2. Enter your subscription of Hiddify
 
