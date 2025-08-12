@@ -214,19 +214,24 @@ grep -Fq "$CMD" $FILE || sed -i "/exit 0/i $CMD" $FILE
 echo "Скачиваем скрипт check_hiddify.sh..."
 wget -q -O /usr/bin/check_hiddify.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/check_hiddify.sh
 
-# Делаем скрипт исполняемым
+# Загрузка скрипта check_pbr.sh
+echo "Скачиваем скрипт check_pbr.sh..."
+wget -q -O /usr/bin/check_hiddify.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/check_pbr.sh
+
+# Делаем скрипты исполняемыми
 chmod +x /usr/bin/check_hiddify.sh
+chmod +x /usr/bin/check_pbr.sh
 
 # Задания для crontab
 echo "Добавляем задания в crontab..."
 CRON_CHECK_HIDDIFY="*/2 * * * * /usr/bin/check_hiddify.sh"
+CRON_CHECK_PBR="*/2 * * * * /usr/bin/check_pbr.sh"
 CRON_REBOOT="0 4 * * * /sbin/reboot"
 
-# Добавляем оба задания, если их ещё нет
-( crontab -l 2>/dev/null | grep -Fxq "$CRON_CHECK_HIDDIFY" ) || ( crontab -l 2>/dev/null; echo "$CRON_CHECK_HIDDIFY" ) | crontab -
-( crontab -l 2>/dev/null | grep -Fxq "$CRON_REBOOT" ) || ( crontab -l 2>/dev/null; echo "$CRON_REBOOT" ) | crontab -
+# Читаем текущий crontab, добавляем новые строки, удаляя дубликаты
+(crontab -l 2>/dev/null; echo "$CRON_CHECK_HIDDIFY"; echo "$CRON_CHECK_PBR"; echo "$CRON_REBOOT") \
+  | sort -u | crontab -
 
-echo "Готово: check_hiddify.sh будет запускаться каждые 2 минуты, а система — перезагружаться в 4 утра."
-# Перезапуск сервисов
+echo "Готово: check_hiddify.sh и check_pbr.sh будут запускаться каждые 2 минуты, а система — перезагружаться в 4 утра."
 echo "Применяем изменения и перезагружаемся..."
 reboot
