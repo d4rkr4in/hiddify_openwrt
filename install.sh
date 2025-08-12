@@ -221,12 +221,12 @@ chmod +x /usr/bin/check_pbr.sh
 echo "Добавляем задания в crontab..."
 CRON_CHECK_HIDDIFY="*/2 * * * * /usr/bin/check_hiddify.sh"
 CRON_CHECK_PBR="*/2 * * * * /usr/bin/check_pbr.sh"
-CRON_REBOOT="0 4 * * * /sbin/reboot"
+CRON_REBOOT="0 4 * * 0 /sbin/reboot"
 
 # Читаем текущий crontab, добавляем новые строки, удаляя дубликаты
 (crontab -l 2>/dev/null; echo "$CRON_CHECK_HIDDIFY"; echo "$CRON_CHECK_PBR"; echo "$CRON_REBOOT") \
   | sort -u | crontab -
 
-echo "Готово: check_hiddify.sh и check_pbr.sh будут запускаться каждые 2 минуты, а система — перезагружаться в 4 утра."
+echo "Готово: check_hiddify.sh и check_pbr.sh будут запускаться каждые 2 минуты, а система — перезагружаться в воскресенье в 4 утра."
 echo "Применяем изменения и перезагружаемся..."
 reboot
