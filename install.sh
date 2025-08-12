@@ -216,7 +216,7 @@ wget -q -O /usr/bin/check_hiddify.sh https://raw.githubusercontent.com/d4rkr4in/
 
 # Загрузка скрипта check_pbr.sh
 echo "Скачиваем скрипт check_pbr.sh..."
-wget -q -O /usr/bin/check_hiddify.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/check_pbr.sh
+wget -q -O /usr/bin/check_pbr.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/check_pbr.sh
 
 # Делаем скрипты исполняемыми
 chmod +x /usr/bin/check_hiddify.sh
