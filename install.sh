@@ -205,11 +205,6 @@ uci set pbr.@dns_policy[-1].dest_dns='tun0'
 uci set pbr.@dns_policy[-1].enabled='1'
 uci commit pbr
 
-CMD='(sleep 5 && /etc/init.d/pbr restart) &'
-FILE=/etc/rc.local
-
-grep -Fq "$CMD" $FILE || sed -i "/exit 0/i $CMD" $FILE
-
 # Загрузка скрипта check_hiddify.sh
 echo "Скачиваем скрипт check_hiddify.sh..."
 wget -q -O /usr/bin/check_hiddify.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/check_hiddify.sh
