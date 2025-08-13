@@ -1,12 +1,17 @@
-#!/bin/sh
-
 # Название сервиса в OpenWrt
 SERVICE="pbr"
 
+# Формат времени
+TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
+
 # Проверка состояния
 if ! /etc/init.d/$SERVICE status >/dev/null 2>&1; then
-    echo "$(date '+%Y-%m-%d %H:%M:%S') — сервис $SERVICE не запущен. Запускаю..."
+    MESSAGE="$TIMESTAMP — сервис $SERVICE не запущен. Запускаю..."
+    echo "$MESSAGE"
+    logger -t "$SERVICE-check" "$MESSAGE"
     /etc/init.d/$SERVICE start
 else
-    echo "$(date '+%Y-%m-%d %H:%M:%S') — сервис $SERVICE работает."
+    MESSAGE="$TIMESTAMP — сервис $SERVICE работает."
+    echo "$MESSAGE"
+    logger -t "$SERVICE-check" "$MESSAGE"
 fi
