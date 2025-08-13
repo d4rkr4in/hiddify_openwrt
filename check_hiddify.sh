@@ -1,15 +1,21 @@
 #!/bin/sh
 
-# Use curl via tun0 to get IP from ifconfig.me
+# Формат времени
+TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
+TAG="check_hiddify"
+
+# Получаем IP через tun0
 IP=$(curl --interface tun0 -s --max-time 10 ifconfig.me)
 
-# If curl fails or returns empty, restart services
+# Проверка результата
 if [ -z "$IP" ]; then
-  echo "No response via tun0. Restarting HiddifyCli and Tun2Socks..."
-  logger -t check_hiddify "No response via tun0. Restarting HiddifyCli and Tun2Socks..."
-  /etc/init.d/HiddifyCli restart
-  /etc/init.d/tun2socks restart
+    MESSAGE="$TIMESTAMP — нет ответа через tun0. Перезапускаю HiddifyCli и Tun2Socks..."
+    /etc/init.d/HiddifyCli restart
+    /etc/init.d/tun2socks restart
 else
-  echo "tun0 is working. IP: $IP"
-  logger -t check_hiddify "tun0 is working. IP: $IP"
+    MESSAGE="$TIMESTAMP — tun0 работает. IP: $IP"
 fi
+
+# Вывод и логирование
+echo "$MESSAGE"
+logger -t "$TAG" "$MESSAGE"
