@@ -205,28 +205,24 @@ uci set pbr.@dns_policy[-1].dest_dns='tun0'
 uci set pbr.@dns_policy[-1].enabled='1'
 uci commit pbr
 
+sed -i '/^exit 0/i (sleep 10; /etc/init.d/pbr start) &' /etc/rc.local
+
 # Загрузка скрипта check_hiddify.sh
 echo "Скачиваем скрипт check_hiddify.sh..."
 wget -q -O /usr/bin/check_hiddify.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/check_hiddify.sh
 
-# Загрузка скрипта check_pbr.sh
-echo "Скачиваем скрипт check_pbr.sh..."
-wget -q -O /usr/bin/check_pbr.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/check_pbr.sh
-
 # Делаем скрипты исполняемыми
 chmod +x /usr/bin/check_hiddify.sh
-chmod +x /usr/bin/check_pbr.sh
 
 # Задания для crontab
 echo "Добавляем задания в crontab..."
 CRON_CHECK_HIDDIFY="*/2 * * * * /usr/bin/check_hiddify.sh"
-CRON_CHECK_PBR="*/2 * * * * /usr/bin/check_pbr.sh"
 CRON_REBOOT="0 4 * * 0 /sbin/reboot"
 
 # Читаем текущий crontab, добавляем новые строки, удаляя дубликаты
-(crontab -l 2>/dev/null; echo "$CRON_CHECK_HIDDIFY"; echo "$CRON_CHECK_PBR"; echo "$CRON_REBOOT") \
+(crontab -l 2>/dev/null; echo "$CRON_CHECK_HIDDIFY"; echo "$CRON_REBOOT") \
   | sort -u | crontab -
 
-echo "Готово: check_hiddify.sh и check_pbr.sh будут запускаться каждые 2 минуты, а система — перезагружаться в воскресенье в 4 утра."
+echo "Готово: check_hiddify.sh будут запускаться каждые 2 минуты, а система — перезагружаться в воскресенье в 4 утра."
 echo "Применяем изменения и перезагружаемся..."
 reboot
