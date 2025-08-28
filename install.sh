@@ -226,6 +226,6 @@ CRON_GET_CIDR4="0 4 * * * /usr/bin/get_cidr4.sh"
 (crontab -l 2>/dev/null; echo "$CRON_CHECK_HIDDIFY"; echo "$CRON_REBOOT"; echo "$CRON_GET_CIDR4") \
   | sort -u | crontab -
 
-echo "Готово: check_hiddify.sh будут запускаться каждые 2 минуты, а система — перезагружаться в воскресенье в 4 утра."
+echo "Готово: check_hiddify.sh будут запускаться каждые 2 минуты, get_cidr4.sh каждый день в 4 утра, а система — перезагружаться в воскресенье в 4 утра."
 echo "Применяем изменения и перезагружаемся..."
 reboot
