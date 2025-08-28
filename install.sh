@@ -157,29 +157,7 @@ chmod 755 /etc/init.d/tun2socks
 service tun2socks start
 service HiddifyCli enable && service tun2socks enable
 opkg install kmod-tun && opkg install dnsmasq-full
-uci add_list dhcp.@dnsmasq[0].server='95.85.95.85'
 uci commit dhcp
-
-# Установка PBR
-echo "Устанавливаем Policy Based Routing..."
-opkg install pbr luci-app-pbr
-uci set pbr.config.enabled="1"
-uci commit pbr
-uci set dhcp.lan.force='1'
-uci commit dhcp
-
-# Удаление всех policy и dns_policy правил
-echo "== Удаление всех PBR правил =="
-INDEX=0
-while uci get pbr.@policy[$INDEX] >/dev/null 2>&1; do
-  uci delete pbr.@policy[$INDEX]
-done
-
-INDEX=0
-while uci get pbr.@dns_policy[$INDEX] >/dev/null 2>&1; do
-  uci delete pbr.@dns_policy[$INDEX]
-done
-uci commit pbr
 
 # Загрузка CIDR списка и настройка PBR
 echo "Загружаем CIDR список и настраиваем PBR..."
@@ -203,6 +181,27 @@ CRON_GET_CIDR4="0 4 * * * /usr/bin/get_cidr4.sh"
   | sort -u | crontab -
 
 echo "Готово: check_hiddify.sh будут запускаться каждые 2 минуты, get_cidr4.sh каждый день в 4 утра, а система — перезагружаться в воскресенье в 4 утра."
+
+# Установка PBR
+echo "Устанавливаем Policy Based Routing..."
+opkg install pbr luci-app-pbr
+uci set pbr.config.enabled="1"
+uci commit pbr
+uci set dhcp.lan.force='1'
+uci commit dhcp
+
+# Удаление всех policy и dns_policy правил
+echo "== Удаление всех PBR правил =="
+INDEX=0
+while uci get pbr.@policy[$INDEX] >/dev/null 2>&1; do
+  uci delete pbr.@policy[$INDEX]
+done
+
+INDEX=0
+while uci get pbr.@dns_policy[$INDEX] >/dev/null 2>&1; do
+  uci delete pbr.@dns_policy[$INDEX]
+done
+uci commit pbr
 
 # Добавляем правило в PBR для CIDR списка
 uci add pbr policy
