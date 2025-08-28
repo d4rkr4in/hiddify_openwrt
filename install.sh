@@ -216,13 +216,6 @@ uci set pbr.@policy[-1].dest_addr='file:///root/cidr4.txt'
 uci set pbr.@policy[-1].interface='tun0'
 uci set pbr.@policy[-1].enabled='1'
 
-uci add pbr dns_policy
-uci set pbr.@dns_policy[-1].name='dns'
-uci set pbr.@dns_policy[-1].src_addr='0.0.0.0'
-uci set pbr.@dns_policy[-1].dest_dns='tun0'
-uci set pbr.@dns_policy[-1].enabled='1'
-uci commit pbr
-
 sed -i '/^exit 0/i (sleep 10; /etc/init.d/pbr start) &' /etc/rc.local
 
 echo "Применяем изменения и перезагружаемся..."
