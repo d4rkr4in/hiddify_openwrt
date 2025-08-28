@@ -187,6 +187,23 @@ wget -q -O /usr/bin/get_cidr4.sh https://raw.githubusercontent.com/d4rkr4in/hidd
 chmod +x  /usr/bin/get_cidr4.sh
 /usr/bin/get_cidr4.sh
 
+# Загрузка скрипта check_hiddify.sh
+echo "Скачиваем скрипт check_hiddify.sh..."
+wget -q -O /usr/bin/check_hiddify.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/check_hiddify.sh
+chmod +x /usr/bin/check_hiddify.sh
+
+# Задания для crontab
+echo "Добавляем задания в crontab..."
+CRON_CHECK_HIDDIFY="*/2 * * * * /usr/bin/check_hiddify.sh"
+CRON_REBOOT="0 4 * * 0 /sbin/reboot"
+CRON_GET_CIDR4="0 4 * * * /usr/bin/get_cidr4.sh"
+
+# Читаем текущий crontab, добавляем новые строки, удаляя дубликаты
+(crontab -l 2>/dev/null; echo "$CRON_CHECK_HIDDIFY"; echo "$CRON_REBOOT"; echo "$CRON_GET_CIDR4") \
+  | sort -u | crontab -
+
+echo "Готово: check_hiddify.sh будут запускаться каждые 2 минуты, get_cidr4.sh каждый день в 4 утра, а система — перезагружаться в воскресенье в 4 утра."
+
 # Добавляем правило в PBR для CIDR списка
 uci add pbr policy
 uci set pbr.@policy[-1].name='torrents'
@@ -209,23 +226,5 @@ uci commit pbr
 
 sed -i '/^exit 0/i (sleep 10; /etc/init.d/pbr start) &' /etc/rc.local
 
-# Загрузка скрипта check_hiddify.sh
-echo "Скачиваем скрипт check_hiddify.sh..."
-wget -q -O /usr/bin/check_hiddify.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/check_hiddify.sh
-
-# Делаем скрипты исполняемыми
-chmod +x /usr/bin/check_hiddify.sh
-
-# Задания для crontab
-echo "Добавляем задания в crontab..."
-CRON_CHECK_HIDDIFY="*/2 * * * * /usr/bin/check_hiddify.sh"
-CRON_REBOOT="0 4 * * 0 /sbin/reboot"
-CRON_GET_CIDR4="0 4 * * * /usr/bin/get_cidr4.sh"
-
-# Читаем текущий crontab, добавляем новые строки, удаляя дубликаты
-(crontab -l 2>/dev/null; echo "$CRON_CHECK_HIDDIFY"; echo "$CRON_REBOOT"; echo "$CRON_GET_CIDR4") \
-  | sort -u | crontab -
-
-echo "Готово: check_hiddify.sh будут запускаться каждые 2 минуты, get_cidr4.sh каждый день в 4 утра, а система — перезагружаться в воскресенье в 4 утра."
 echo "Применяем изменения и перезагружаемся..."
 reboot
