@@ -183,9 +183,9 @@ uci commit pbr
 
 # Загрузка CIDR списка и настройка PBR
 echo "Загружаем CIDR список и настраиваем PBR..."
-wget https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/get_cidr4.sh
-chmod +x  get_cidr4.sh
-./get_cidr4.sh
+wget -q -O /usr/bin/get_cidr4.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/get_cidr4.sh
+chmod +x  /usr/bin/get_cidr4.sh
+/usr/bin/get_cidr4.sh
 
 # Добавляем правило в PBR для CIDR списка
 uci add pbr policy
@@ -220,9 +220,10 @@ chmod +x /usr/bin/check_hiddify.sh
 echo "Добавляем задания в crontab..."
 CRON_CHECK_HIDDIFY="*/2 * * * * /usr/bin/check_hiddify.sh"
 CRON_REBOOT="0 4 * * 0 /sbin/reboot"
+CRON_GET_CIDR4="0 4 * * * /usr/bin/get_cidr4.sh"
 
 # Читаем текущий crontab, добавляем новые строки, удаляя дубликаты
-(crontab -l 2>/dev/null; echo "$CRON_CHECK_HIDDIFY"; echo "$CRON_REBOOT") \
+(crontab -l 2>/dev/null; echo "$CRON_CHECK_HIDDIFY"; echo "$CRON_REBOOT"; echo "$CRON_GET_CIDR4") \
   | sort -u | crontab -
 
 echo "Готово: check_hiddify.sh будут запускаться каждые 2 минуты, а система — перезагружаться в воскресенье в 4 утра."
