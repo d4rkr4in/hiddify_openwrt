@@ -34,7 +34,7 @@ chmod +x /usr/bin/HiddifyCli
 
 # Создание init скрипта для HiddifyCli
 echo "Создаем init скрипт для HiddifyCli..."
-cat > /etc/init.d/HiddifyCli <<EOF
+cat > /etc/init.d/HiddifyCli <<'EOF'
 #!/bin/sh /etc/rc.common
 START=40
 STOP=89
