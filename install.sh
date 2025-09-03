@@ -32,6 +32,7 @@ tar -xvzf /tmp/HiddifyCli.tar.gz -C /tmp
 mv /tmp/HiddifyCli /usr/bin/  
 chmod +x /usr/bin/HiddifyCli  
 
+SUBSCRIPTION_LINK=$(echo "$SUBSCRIPTION_LINK" | tr -d '\r' | tr -d '\n')
 SUBSCRIPTION_LINK_ESCAPED=$(printf '%q' "$SUBSCRIPTION_LINK")
 
 cat > /etc/init.d/HiddifyCli <<EOF
