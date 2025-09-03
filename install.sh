@@ -211,7 +211,8 @@ uci commit pbr
 # Добавляем правило в PBR для CIDR списка
 uci add pbr policy
 uci set pbr.@policy[-1].name='torrents'
-uci set pbr.@policy[-1].src_port='6881-6889'
+# Исключаем порты для торрентов и Steam
+uci set pbr.@policy[-1].src_port='1725 6881-6889'
 uci set pbr.@policy[-1].interface='wan'
 uci set pbr.@policy[-1].enabled='1'
 
