@@ -4,9 +4,9 @@
 opkg install curl nano luci-app-sqm luci-theme-openwrt-2020
 
 # Отключаем ipv6 через скрипт ipv6_off.sh
-wget -O ipv6_off.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/ipv6_off.sh
-chmod +x ipv6_off.sh
-./ipv6_off.sh
+#wget -O ipv6_off.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/ipv6_off.sh
+#chmod +x ipv6_off.sh
+#./ipv6_off.sh
 
 # Проверка на root-права
 if [ "$(id -u)" -ne 0 ]; then
