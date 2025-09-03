@@ -220,6 +220,7 @@ uci set pbr.@policy[-1].name='cidr4'
 uci set pbr.@policy[-1].dest_addr='file:///root/cidr4.txt'
 uci set pbr.@policy[-1].interface='tun0'
 uci set pbr.@policy[-1].enabled='1'
+uci commit pbr
 
 sed -i '/^exit 0/i (sleep 10; /etc/init.d/pbr start) &' /etc/rc.local
 
