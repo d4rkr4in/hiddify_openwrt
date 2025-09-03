@@ -42,7 +42,7 @@ USE_PROCD=1
 
 start_service() {
     procd_open_instance
-    procd_set_param command /usr/bin/HiddifyCli run -c $SUBSCRIPTION_LINK -d /root/appconf.conf
+    procd_set_param command /usr/bin/HiddifyCli run -c "$SUBSCRIPTION_LINK" -d /root/appconf.conf
     procd_set_param stdout 1
     procd_set_param stderr 1
     procd_set_param respawn
