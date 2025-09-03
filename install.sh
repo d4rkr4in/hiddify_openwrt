@@ -32,12 +32,6 @@ tar -xvzf /tmp/HiddifyCli.tar.gz -C /tmp
 mv /tmp/HiddifyCli /usr/bin/  
 chmod +x /usr/bin/HiddifyCli  
 
-# Если переменной нет, используем пустую строку
-: "${SUBSCRIPTION_LINK:=}"
-
-# Экранируем команду для безопасного вставления в init-скрипт
-CMD_ESCAPED=$(printf '%q' "/usr/bin/HiddifyCli run -c \"$SUBSCRIPTION_LINK\" -d /root/appconf.conf")
-
 cat > /etc/init.d/HiddifyCli <<EOF
 #!/bin/sh /etc/rc.common
 START=40
@@ -46,7 +40,7 @@ USE_PROCD=1
 
 start_service() {
     procd_open_instance
-    procd_set_param command $CMD_ESCAPED
+    procd_set_param command "$SUBSCRIPTION_LINK"
     procd_set_param stdout 1
     procd_set_param stderr 1
     procd_set_param respawn
