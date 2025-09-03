@@ -32,9 +32,10 @@ tar -xvzf /tmp/HiddifyCli.tar.gz -C /tmp
 mv /tmp/HiddifyCli /usr/bin/  
 chmod +x /usr/bin/HiddifyCli  
 
-# Создание init скрипта для HiddifyCli
-echo "Создаем init скрипт для HiddifyCli..."
-cat > /etc/init.d/HiddifyCli <<'EOF'
+# после ввода и очистки ссылки
+SUBSCRIPTION_LINK=$(echo "$SUBSCRIPTION_LINK" | tr -d '\r' | tr -d '"' | tr -d "'" | xargs)
+
+cat > /etc/init.d/HiddifyCli <<EOF
 #!/bin/sh /etc/rc.common
 START=40
 STOP=89
