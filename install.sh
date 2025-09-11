@@ -172,7 +172,7 @@ chmod +x /usr/bin/check_hiddify.sh
 # Задания для crontab
 echo "Добавляем задания в crontab..."
 CRON_CHECK_HIDDIFY="*/2 * * * * /usr/bin/check_hiddify.sh"
-CRON_REBOOT="0 4 * * 0 /sbin/reboot"
+CRON_REBOOT="0 5 * * * /sbin/reboot"
 CRON_GET_CIDR4="0 4 * * * /usr/bin/get_cidr4.sh"
 
 # Читаем текущий crontab, добавляем новые строки, удаляя дубликаты
