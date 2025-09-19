@@ -25,8 +25,4 @@ uci -q delete network.globals.ula_prefix
 uci commit network
 uci commit dhcp
 
-echo "Перезапуск сетевых служб..."
-/etc/init.d/network restart
-/etc/init.d/odhcpd restart
-
 echo "IPv6 полностью отключён."
