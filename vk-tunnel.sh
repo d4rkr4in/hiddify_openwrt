@@ -33,7 +33,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=vk-tunnel --insecure=1 --http-protocol=https --ws-protocol=wss --host=localhost --port=80 --timeout=18000
+ExecStart=vk-tunnel --insecure=1 --http-protocol=https --ws-protocol=wss --host=localhost --port=443 --timeout=18000
 Restart=always
 RestartSec=5
 
