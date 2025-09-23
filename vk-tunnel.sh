@@ -25,4 +25,4 @@ sudo npm install -g @vkontakte/vk-tunnel
 
 echo "=== Запуск VK Tunnel ==="
 echo "После запуска откроется ссылка для авторизации VK. Нажмите Enter после авторизации."
-vk-tunnel --insecure=1 --http-protocol=http --ws-protocol=ws --host=localhost --port=80 --timeout=18000
+vk-tunnel --insecure=1 --http-protocol=https --ws-protocol=wss --host=localhost --port=80 --timeout=18000
