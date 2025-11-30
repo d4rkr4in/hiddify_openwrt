@@ -9,9 +9,8 @@ IP=$(curl --interface tun0 -s --max-time 10 ifconfig.me)
 
 # Проверка результата
 if [ -z "$IP" ]; then
-    MESSAGE="$TIMESTAMP — нет ответа через tun0. Перезапускаю HiddifyCli и Tun2Socks..."
+    MESSAGE="$TIMESTAMP — нет ответа через tun0. Перезапускаю HiddifyCli..."
     /etc/init.d/HiddifyCli restart
-    /etc/init.d/tun2socks restart
 else
     MESSAGE="$TIMESTAMP — tun0 работает. IP: $IP"
 fi
