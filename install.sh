@@ -179,6 +179,11 @@ echo "Готово: check_hiddify.sh будут запускаться кажд�
 # Установка PBR
 echo "Устанавливаем Policy Based Routing..."
 opkg install pbr luci-app-pbr
+opkg install libnettle8 libnetfilter-conntrack3
+cd /tmp/ && opkg download dnsmasq-full
+opkg remove dnsmasq
+opkg install dnsmasq-full --cache /tmp/
+rm -f /tmp/dnsmasq-full*.ipk
 uci set pbr.config.enabled="1"
 uci commit pbr
 uci set dhcp.lan.force='1'
