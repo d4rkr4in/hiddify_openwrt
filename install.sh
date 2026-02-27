@@ -7,7 +7,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # Устанавливаем нужные пакеты
-opkg install curl nano luci-theme-openwrt-2020
+opkg install curl nano unzip luci-theme-openwrt-2020
 
 # Цикл запроса ссылки на подписку, пока она пуста
 while true; do
@@ -90,7 +90,6 @@ echo "Устанавливаем Tun2Socks..."
 curl -L --retry 5 --connect-timeout 5 -o /tmp/tun2socks-linux-arm64.zip \
 https://github.com/xjasonlyu/tun2socks/releases/download/v2.5.2/tun2socks-linux-arm64.zip
 opkg install kmod-tun
-opkg install unzip
 unzip /tmp/tun2socks-linux-arm64.zip
 mv /tmp/tun2socks-linux-arm64 /usr/bin/tun2socks
 
