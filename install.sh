@@ -44,7 +44,6 @@ start_service() {
 }
 EOF
 
-
 # Создание конфигурационного файла
 echo "Создаем конфигурационный файл appconf.conf..."
 cat > /root/appconf.conf <<EOF
@@ -147,7 +146,6 @@ start_service() {
     procd_close_instance
 }
 EOF
-
 
 chmod 755 /etc/init.d/tun2socks
 service tun2socks start
