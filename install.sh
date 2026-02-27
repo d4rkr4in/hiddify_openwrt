@@ -58,7 +58,7 @@ cat > /root/appconf.conf <<EOF
   "ipv6-mode": "ipv4_only",
   "remote-dns-address": "udp://1.1.1.1",
   "remote-dns-domain-strategy": "",
-  "direct-dns-address": "95.85.95.85",
+  "direct-dns-address": "1.1.1.1",
   "direct-dns-domain-strategy": "",
   "mixed-port": 12334,
   "tproxy-port": 12335,
