@@ -57,6 +57,7 @@ echo "Удаляем конфигурации..."
 rm -f "$APPCONF"
 # Файл подписки не удаляем — можно использовать при повторной установке
 rm -f "$CIDR_FILE"
+[ -d /overlay/upper/usr/share/hiddify ] && rm -rf /overlay/upper/usr/share/hiddify
 
 # --- Удаление заданий cron ---
 echo "Удаляем задания cron..."
