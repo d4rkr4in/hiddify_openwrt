@@ -141,6 +141,14 @@ config interface 'tun0'
 NET_EOF
 fi
 
+# --- DNS на WAN: 1.1.1.1 ---
+if uci get network.wan >/dev/null 2>&1; then
+  uci set network.wan.peerdns='0'
+  uci delete network.wan.dns 2>/dev/null || true
+  uci add_list network.wan.dns='1.1.1.1'
+  uci commit network
+fi
+
 # --- Firewall ---
 if ! grep -q "option name 'tun'" /etc/config/firewall 2>/dev/null; then
   cat >> /etc/config/firewall << 'FW_EOF'
