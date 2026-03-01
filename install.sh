@@ -253,23 +253,25 @@ echo "Устанавливаем скрипт маршрутизации tun0 (i
 wget -q -O /usr/bin/tun0-routes.sh "$REPO_RAW/tun0-routes.sh"
 chmod +x /usr/bin/tun0-routes.sh
 
-# --- Сервис tun0-routes в автозапуске (START=50, ждёт tun0 до 60 с) ---
+# --- Сервис tun0-routes + hotplug: маршруты применяются при загрузке и сразу при подъёме tun0 (без задержки до 30 с) ---
 echo "Создаём сервис tun0-routes..."
 cat > /etc/init.d/tun0-routes << 'TUN0ROUTES_EOF'
 #!/bin/sh /etc/rc.common
 
 USE_PROCD=1
-START=50
+START=99
 STOP=89
 
 start_service() {
     procd_open_instance
-    procd_set_param command /bin/sh -c 'i=0; while [ $i -lt 12 ]; do ip link show tun0 >/dev/null 2>&1 && /usr/bin/tun0-routes.sh && break; i=$((i+1)); sleep 5; done'
-    procd_set_param oneshot 1
+    procd_set_param command /bin/sh -c '[ ! -s /root/cidr4.txt ] && /usr/bin/get_cidr4.sh || true; while true; do ip link show tun0 >/dev/null 2>&1 && /usr/bin/tun0-routes.sh; sleep 30; done'
+    procd_set_param respawn 0
     procd_close_instance
 }
 TUN0ROUTES_EOF
 chmod 755 /etc/init.d/tun0-routes
+mkdir -p /etc/hotplug.d/iface
+echo '[ "$INTERFACE" = "tun0" ] && [ "$ACTION" = "ifup" ] && /usr/bin/tun0-routes.sh' > /etc/hotplug.d/iface/99-tun0-routes
 service tun0-routes enable
 service tun0-routes start
 
