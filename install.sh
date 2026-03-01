@@ -95,6 +95,11 @@ start_service() {
     procd_set_param stderr 1
     procd_set_param respawn
     procd_close_instance
+    # После подъёма tun0 восстановить правила маршрутизации (ip rule/route table 200)
+    procd_open_instance "tun0-routes"
+    procd_set_param command /bin/sh -c "sleep 10; /usr/bin/tun0-routes.sh"
+    procd_set_param oneshot 1
+    procd_close_instance
 }
 EOF
 
@@ -224,6 +229,11 @@ start_service() {
     procd_set_param stderr 1
     procd_set_param respawn
     procd_close_instance
+    # После подъёма tun0 восстановить правила маршрутизации (ip rule/route table 200)
+    procd_open_instance "tun0-routes"
+    procd_set_param command /bin/sh -c "sleep 10; /usr/bin/tun0-routes.sh"
+    procd_set_param oneshot 1
+    procd_close_instance
 }
 HEV_INIT_EOF
 chmod 755 /etc/init.d/hev-socks5-tunnel
@@ -243,9 +253,8 @@ sed -i "s|cidr4\.txt|$CIDR_FILE|g" /usr/bin/get_cidr4.sh
 CRON_CHECK="*/2 * * * * /usr/bin/check_hiddify.sh"
 CRON_REBOOT="0 5 * * * /sbin/reboot"
 CRON_CIDR="0 4 * * * /usr/bin/get_cidr4.sh"
-CRON_TUN0="5 4 * * * /usr/bin/tun0-routes.sh"
-( crontab -l 2>/dev/null | grep -v check_hiddify.sh | grep -v "get_cidr4.sh" | grep -v "tun0-routes.sh" | grep -v "0 5 \* \* \* /sbin/reboot" || true; echo "$CRON_CHECK"; echo "$CRON_REBOOT"; echo "$CRON_CIDR"; echo "$CRON_TUN0" ) | crontab -
-echo "Cron: check_hiddify — каждые 2 мин, get_cidr4 — 04:00, tun0-routes — 04:05, reboot — 05:00."
+( crontab -l 2>/dev/null | grep -v check_hiddify.sh | grep -v "get_cidr4.sh" | grep -v "tun0-routes.sh" | grep -v "0 5 \* \* \* /sbin/reboot" || true; echo "$CRON_CHECK"; echo "$CRON_REBOOT"; echo "$CRON_CIDR" ) | crontab -
+echo "Cron: check_hiddify — каждые 2 мин, get_cidr4 — 04:00, reboot — 05:00."
 
 # --- CIDR и маршрутизация через tun0 (скрипт вместо PBR) ---
 /usr/bin/get_cidr4.sh || true
@@ -253,13 +262,6 @@ echo "Cron: check_hiddify — каждые 2 мин, get_cidr4 — 04:00, tun0-r
 echo "Устанавливаем скрипт маршрутизации tun0 (ip rule + ip route)..."
 wget -q -O /usr/bin/tun0-routes.sh "$REPO_RAW/tun0-routes.sh"
 chmod +x /usr/bin/tun0-routes.sh
-
-# rc.local: запуск tun0-routes после подъёма tun0 (идемпотентно)
-if ! grep -q "tun0-routes.sh" /etc/rc.local 2>/dev/null; then
-  [ ! -f /etc/rc.local ] && echo "#!/bin/sh" > /etc/rc.local
-  grep -q '^exit 0' /etc/rc.local || echo "exit 0" >> /etc/rc.local
-  sed -i '/^exit 0/i (sleep 15; /usr/bin/tun0-routes.sh) \&' /etc/rc.local
-fi
 
 # --- Перезагрузка ---
 if [ "$1" != "--no-reboot" ]; then
