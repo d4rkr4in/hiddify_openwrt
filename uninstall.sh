@@ -49,8 +49,10 @@ _rm_retry() {
 _rm_retry /usr/bin/HiddifyCli || echo "  Предупреждение: не удалось удалить /usr/bin/HiddifyCli (перезагрузка и повторный uninstall помогут)" >&2
 _rm_retry /usr/bin/hev-socks5-tunnel || echo "  Предупреждение: не удалось удалить /usr/bin/hev-socks5-tunnel" >&2
 _rm_retry /usr/bin/tun2socks || echo "  Предупреждение: не удалось удалить /usr/bin/tun2socks" >&2
+rm -f /usr/bin/upx
 rm -f /usr/bin/get_cidr4.sh /usr/bin/check_hiddify.sh
 rm -f /etc/hev-socks5-tunnel.yml
+opkg remove xz-utils 2>/dev/null || opkg remove xz 2>/dev/null || true
 
 # --- Удаление конфигов и данных в /root ---
 echo "Удаляем конфигурации..."
@@ -126,7 +128,7 @@ echo ""
 echo "=== Удаление завершено ==="
 echo "Сделано:"
 echo "  - остановлены и удалены сервисы HiddifyCli, hev-socks5-tunnel, tun2socks"
-echo "  - удалены /usr/bin/HiddifyCli, hev-socks5-tunnel, tun2socks, get_cidr4.sh, check_hiddify.sh, /etc/hev-socks5-tunnel.yml"
+echo "  - удалены /usr/bin/HiddifyCli, hev-socks5-tunnel, tun2socks, upx, get_cidr4.sh, check_hiddify.sh, /etc/hev-socks5-tunnel.yml, пакет xz/xz-utils"
 echo "  - удалены $APPCONF, $CIDR_FILE (файл подписки $SUBSCRIPTION_FILE сохранён)"
 echo "  - убраны задания cron (check_hiddify, get_cidr4, reboot)"
 echo "  - убрана строка PBR из rc.local"
