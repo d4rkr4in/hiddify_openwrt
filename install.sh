@@ -11,7 +11,9 @@ HEV_TUNNEL_VER="2.14.4"
 HEV_TUNNEL_ARCH="arm64"
 REPO_RAW="https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main"
 HEV_CONF="/etc/hev-socks5-tunnel.yml"
-PBR_VER="1.2.3-r23"
+PBR_VER="1.2.2-8"
+PBR_IPK_URL="https://github.com/mossdef-org/pbr/releases/download/v${PBR_VER}/pbr-${PBR_VER}_openwrt-24.10_all.ipk"
+LUCI_PBR_IPK_URL="https://github.com/mossdef-org/luci-app-pbr/releases/download/v${PBR_VER}/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk"
 SUBSCRIPTION_FILE="/root/hiddify_subscription.url"
 APPCONF="/root/appconf.conf"
 CIDR_FILE="/root/cidr4.txt"
@@ -24,7 +26,7 @@ fi
 
 # --- Очистка при выходе ---
 cleanup() {
-  rm -f /tmp/HiddifyCli.tar.gz /tmp/hev-socks5-tunnel-linux-arm64
+  rm -f /tmp/HiddifyCli.tar.gz /tmp/hev-socks5-tunnel-linux-arm64 /tmp/pbr-*.ipk /tmp/luci-app-pbr-*.ipk
 }
 trap cleanup EXIT
 
@@ -218,20 +220,11 @@ echo "Cron: check_hiddify — каждые 2 мин, get_cidr4 — 04:00, reboot
 # --- CIDR и PBR ---
 /usr/bin/get_cidr4.sh || true
 
-echo "Устанавливаем PBR ${PBR_VER}..."
-if ! opkg install "pbr=${PBR_VER}" "luci-app-pbr=${PBR_VER}" 2>/dev/null; then
-  echo "Версия ${PBR_VER} не найдена в репозитории, ставим доступную..."
-  opkg install pbr luci-app-pbr
-fi
-# Проверка синтаксиса init-скрипта (в некоторых сборках PBR он приходит с ошибкой)
-if ! sh -n /etc/init.d/pbr 2>/dev/null; then
-  echo "Ошибка синтаксиса в /etc/init.d/pbr, переустанавливаем пакет..."
-  opkg install --force-reinstall "pbr=${PBR_VER}" "luci-app-pbr=${PBR_VER}" 2>/dev/null || opkg install --force-reinstall pbr luci-app-pbr 2>/dev/null || true
-fi
-if ! sh -n /etc/init.d/pbr 2>/dev/null; then
-  echo "Внимание: /etc/init.d/pbr по-прежнему с ошибкой. Проверьте версию OpenWrt и пакета pbr (opkg list-installed | grep pbr)." >&2
-  echo "Варианты: обновить прошивку, переустановить вручную: opkg remove pbr luci-app-pbr && opkg install pbr luci-app-pbr" >&2
-fi
+echo "Устанавливаем PBR из mossdef-org (v${PBR_VER})..."
+curl -fL --retry 3 --connect-timeout 10 -o "/tmp/pbr-${PBR_VER}_openwrt-24.10_all.ipk" "$PBR_IPK_URL"
+curl -fL --retry 3 --connect-timeout 10 -o "/tmp/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk" "$LUCI_PBR_IPK_URL"
+opkg install "/tmp/pbr-${PBR_VER}_openwrt-24.10_all.ipk" "/tmp/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk"
+
 uci set pbr.config.enabled="1"
 uci commit pbr
 uci set dhcp.lan.force="1"
