@@ -5,7 +5,7 @@
 set -e
 
 # --- Версии (обновлять здесь) ---
-HIDDIFY_VER="v4.0.3"
+HIDDIFY_VER="3.1.8"
 HEV_TUNNEL_VER="2.14.4"
 PBR_VER="1.2.2-8"
 
@@ -56,7 +56,7 @@ opkg install curl nano unzip luci-theme-openwrt-2020
 # --- HiddifyCli ---
 echo "Устанавливаем HiddifyCli..."
 curl -fL --retry 3 --connect-timeout 10 -o /tmp/HiddifyCli.tar.gz \
-  "https://github.com/hiddify/hiddify-core/releases/download/${HIDDIFY_VER}/hiddify-cli-linux-arm64.tar.gz"
+  "https://github.com/hiddify/hiddify-core/releases/download/v${HIDDIFY_VER}/hiddify-cli-linux-arm64.tar.gz"
 tar -xzf /tmp/HiddifyCli.tar.gz -C /tmp
 mv /tmp/HiddifyCli /usr/bin/
 chmod +x /usr/bin/HiddifyCli
