@@ -4,14 +4,14 @@
 
 set -e
 
-# --- Константы (удобно обновлять версии) ---
+# --- Версии (обновлять здесь) ---
 HIDDIFY_VER="v4.0.3"
-HIDDIFY_ARCH="arm64"
 HEV_TUNNEL_VER="2.14.4"
-HEV_TUNNEL_ARCH="arm64"
+PBR_VER="1.2.2-8"
+
+# --- Остальные константы ---
 REPO_RAW="https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main"
 HEV_CONF="/etc/hev-socks5-tunnel.yml"
-PBR_VER="1.2.2-8"
 PBR_IPK_URL="https://github.com/mossdef-org/pbr/releases/download/v${PBR_VER}/pbr-${PBR_VER}_openwrt-24.10_all.ipk"
 LUCI_PBR_IPK_URL="https://github.com/mossdef-org/luci-app-pbr/releases/download/v${PBR_VER}/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk"
 SUBSCRIPTION_FILE="/root/hiddify_subscription.url"
@@ -56,7 +56,7 @@ opkg install curl nano unzip luci-theme-openwrt-2020
 # --- HiddifyCli ---
 echo "Устанавливаем HiddifyCli..."
 curl -fL --retry 3 --connect-timeout 10 -o /tmp/HiddifyCli.tar.gz \
-  "https://github.com/hiddify/hiddify-core/releases/download/${HIDDIFY_VER}/hiddify-cli-linux-${HIDDIFY_ARCH}.tar.gz"
+  "https://github.com/hiddify/hiddify-core/releases/download/${HIDDIFY_VER}/hiddify-cli-linux-arm64.tar.gz"
 tar -xzf /tmp/HiddifyCli.tar.gz -C /tmp
 mv /tmp/HiddifyCli /usr/bin/
 chmod +x /usr/bin/HiddifyCli
@@ -125,7 +125,7 @@ service HiddifyCli enable
 echo "Устанавливаем hev-socks5-tunnel..."
 opkg install kmod-tun
 curl -fL --retry 3 --connect-timeout 10 -o /tmp/hev-socks5-tunnel-linux-arm64 \
-  "https://github.com/heiher/hev-socks5-tunnel/releases/download/${HEV_TUNNEL_VER}/hev-socks5-tunnel-linux-${HEV_TUNNEL_ARCH}"
+  "https://github.com/heiher/hev-socks5-tunnel/releases/download/${HEV_TUNNEL_VER}/hev-socks5-tunnel-linux-arm64"
 mv /tmp/hev-socks5-tunnel-linux-arm64 /usr/bin/hev-socks5-tunnel
 chmod +x /usr/bin/hev-socks5-tunnel
 
