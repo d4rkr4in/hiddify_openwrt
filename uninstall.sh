@@ -72,17 +72,14 @@ fi
 echo "Полное удаление PBR..."
 service pbr stop 2>/dev/null || true
 service pbr disable 2>/dev/null || true
-if [ -f /etc/config/pbr ]; then
-  uci set pbr.config.enabled="0" 2>/dev/null || true
-  while uci get pbr.@policy[0] >/dev/null 2>&1; do uci delete pbr.@policy[0]; done
-  while uci get pbr.@dns_policy[0] >/dev/null 2>&1; do uci delete pbr.@dns_policy[0]; done
-  uci commit pbr 2>/dev/null || true
-  rm -f /etc/config/pbr
-fi
+
 uci delete dhcp.lan.force 2>/dev/null || true
 uci commit dhcp 2>/dev/null || true
 # Удаление пакетов PBR (полное удаление)
 opkg remove pbr luci-app-pbr --force-depends 2>/dev/null || true
+if [ -f /etc/config/pbr ]; then
+  rm -f /etc/config/pbr
+fi
 
 # --- Удаление интерфейса tun0 из network ---
 echo "Удаляем интерфейс tun0 из network..."
