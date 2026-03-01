@@ -89,7 +89,7 @@ if [ -f /etc/rc.local ]; then
 fi
 
 # --- Удаление остальных пакетов из install.sh ---
-echo "Удаляем пакеты: curl, nano, unzip, luci-theme-openwrt-2020, kmod-tun..."
+echo "Удаляем пакеты: curl, nano, unzip, luci-theme-openwrt-2020, kmod-tun (если установлен)..."
 opkg remove curl nano unzip luci-theme-openwrt-2020 kmod-tun 2>/dev/null || true
 
 # --- Удаление интерфейса tun0 из network ---
