@@ -2,8 +2,6 @@
 # Полное удаление установки Hiddify + OpenWrt (обратный скрипт к install.sh)
 # Запуск: ./uninstall.sh [--remove-packages] [--no-reboot]
 
-set -e
-
 SUBSCRIPTION_FILE="/root/hiddify_subscription.url"
 APPCONF="/root/appconf.conf"
 CIDR_FILE="/root/cidr4.txt"
