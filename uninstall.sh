@@ -18,17 +18,21 @@ echo "=== Удаление Hiddify и связанных компонентов 
 # --- Остановка и отключение сервисов ---
 echo "Останавливаем сервисы..."
 service HiddifyCli stop 2>/dev/null || true
+service hev-socks5-tunnel stop 2>/dev/null || true
 service tun2socks stop 2>/dev/null || true
 service HiddifyCli disable 2>/dev/null || true
+service hev-socks5-tunnel disable 2>/dev/null || true
 service tun2socks disable 2>/dev/null || true
 # Принудительно завершаем процессы (иначе rm даёт "Stale file handle" / "Text file busy")
 killall HiddifyCli 2>/dev/null || true
+killall hev-socks5-tunnel 2>/dev/null || true
 killall tun2socks 2>/dev/null || true
 sleep 2
 
 # --- Удаление init-скриптов ---
 echo "Удаляем init-скрипты..."
 rm -f /etc/init.d/HiddifyCli
+rm -f /etc/init.d/hev-socks5-tunnel
 rm -f /etc/init.d/tun2socks
 
 # --- Удаление бинарников и скриптов ---
@@ -43,8 +47,10 @@ _rm_retry() {
   return 1
 }
 _rm_retry /usr/bin/HiddifyCli || echo "  Предупреждение: не удалось удалить /usr/bin/HiddifyCli (перезагрузка и повторный uninstall помогут)" >&2
+_rm_retry /usr/bin/hev-socks5-tunnel || echo "  Предупреждение: не удалось удалить /usr/bin/hev-socks5-tunnel" >&2
 _rm_retry /usr/bin/tun2socks || echo "  Предупреждение: не удалось удалить /usr/bin/tun2socks" >&2
 rm -f /usr/bin/get_cidr4.sh /usr/bin/check_hiddify.sh
+rm -f /etc/hev-socks5-tunnel.yml
 
 # --- Удаление конфигов и данных в /root ---
 echo "Удаляем конфигурации..."
@@ -121,8 +127,8 @@ fi
 echo ""
 echo "=== Удаление завершено ==="
 echo "Сделано:"
-echo "  - остановлены и удалены сервисы HiddifyCli, tun2socks"
-echo "  - удалены /usr/bin/HiddifyCli, tun2socks, get_cidr4.sh, check_hiddify.sh"
+echo "  - остановлены и удалены сервисы HiddifyCli, hev-socks5-tunnel, tun2socks"
+echo "  - удалены /usr/bin/HiddifyCli, hev-socks5-tunnel, tun2socks, get_cidr4.sh, check_hiddify.sh, /etc/hev-socks5-tunnel.yml"
 echo "  - удалены $APPCONF, $SUBSCRIPTION_FILE, $CIDR_FILE"
 echo "  - убраны задания cron (check_hiddify, get_cidr4, reboot)"
 echo "  - убрана строка PBR из rc.local"
