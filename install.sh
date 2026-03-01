@@ -60,7 +60,7 @@ opkg install curl nano unzip luci-theme-openwrt-2020 xz-utils
 echo "Устанавливаем UPX ${UPX_VER}..."
 curl -fL --retry 3 --connect-timeout 10 -o "/tmp/upx-${UPX_VER}-arm64_linux.tar.xz" \
   "https://github.com/upx/upx/releases/download/v${UPX_VER}/upx-${UPX_VER}-arm64_linux.tar.xz"
-tar -xJf "/tmp/upx-${UPX_VER}-arm64_linux.tar.xz" -C /tmp
+xz -dc "/tmp/upx-${UPX_VER}-arm64_linux.tar.xz" | tar -xf - -C /tmp
 mv "/tmp/upx-${UPX_VER}-arm64_linux/upx" /usr/bin/upx
 chmod +x /usr/bin/upx
 
