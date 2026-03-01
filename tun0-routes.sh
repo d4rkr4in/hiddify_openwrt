@@ -1,6 +1,6 @@
 #!/bin/sh
 # Policy routing: трафик из /root/cidr4.txt направлять через tun0 (без PBR).
-# Запуск: вручную или из rc.local после подъёма tun0; по cron после обновления cidr4.
+# Запуск: из init HiddifyCli и hev-socks5-tunnel после подъёма tun0 (sleep 10); вручную при необходимости.
 
 TABLE=200
 PRIO=30100
