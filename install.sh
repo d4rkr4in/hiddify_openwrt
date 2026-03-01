@@ -5,7 +5,7 @@
 set -e
 
 # --- Версии (обновлять здесь) ---
-HIDDIFY_VER="4.0.3"
+HIDDIFY_VER="3.1.8"
 HEV_TUNNEL_VER="2.14.4"
 UPX_VER="4.2.4"
 
