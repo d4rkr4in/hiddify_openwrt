@@ -55,21 +55,32 @@ fi
 echo "Установка пакетов..."
 opkg update -q
 opkg install curl nano unzip luci-theme-openwrt-2020 xz-utils
+command -v xz >/dev/null 2>&1 || opkg install xz 2>/dev/null || true
 
-# --- UPX (для сжатия HiddifyCli) ---
-echo "Устанавливаем UPX ${UPX_VER}..."
-curl -fL --retry 3 --connect-timeout 10 -o "/tmp/upx-${UPX_VER}-arm64_linux.tar.xz" \
-  "https://github.com/upx/upx/releases/download/v${UPX_VER}/upx-${UPX_VER}-arm64_linux.tar.xz"
-xz -dc "/tmp/upx-${UPX_VER}-arm64_linux.tar.xz" | tar -xf - -C /tmp
-mv "/tmp/upx-${UPX_VER}-arm64_linux/upx" /usr/bin/upx
-chmod +x /usr/bin/upx
+# --- UPX (для сжатия HiddifyCli), если доступен xz ---
+USE_UPX=0
+if command -v xz >/dev/null 2>&1; then
+  echo "Устанавливаем UPX ${UPX_VER}..."
+  if curl -fL --retry 3 --connect-timeout 10 -o "/tmp/upx-${UPX_VER}-arm64_linux.tar.xz" \
+    "https://github.com/upx/upx/releases/download/v${UPX_VER}/upx-${UPX_VER}-arm64_linux.tar.xz" 2>/dev/null && \
+    xz -dc "/tmp/upx-${UPX_VER}-arm64_linux.tar.xz" | tar -xf - -C /tmp 2>/dev/null && \
+    [ -f "/tmp/upx-${UPX_VER}-arm64_linux/upx" ]; then
+    mv "/tmp/upx-${UPX_VER}-arm64_linux/upx" /usr/bin/upx
+    chmod +x /usr/bin/upx
+    USE_UPX=1
+  else
+    echo "UPX не установлен (нет xz или ошибка загрузки), HiddifyCli без сжатия." >&2
+  fi
+else
+  echo "xz не найден, пропускаем UPX. HiddifyCli будет без сжатия." >&2
+fi
 
 # --- HiddifyCli ---
 echo "Устанавливаем HiddifyCli..."
 curl -fL --retry 3 --connect-timeout 10 -o /tmp/HiddifyCli.tar.gz \
   "https://github.com/hiddify/hiddify-core/releases/download/v${HIDDIFY_VER}/hiddify-cli-linux-arm64.tar.gz"
 tar -xzf /tmp/HiddifyCli.tar.gz -C /tmp
-upx -1 /tmp/HiddifyCli
+[ "$USE_UPX" = "1" ] && command -v upx >/dev/null 2>&1 && upx -1 /tmp/HiddifyCli 2>/dev/null || true
 mv /tmp/HiddifyCli /usr/bin/
 chmod +x /usr/bin/HiddifyCli
 
