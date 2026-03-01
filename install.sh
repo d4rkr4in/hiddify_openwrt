@@ -262,9 +262,6 @@ if ! grep -q "tun0-routes.sh" /etc/rc.local 2>/dev/null; then
   sed -i '/^exit 0/i (sleep 15; /usr/bin/tun0-routes.sh) \&' /etc/rc.local
 fi
 
-# Запуск один раз сейчас (tun0 уже поднят hev-socks5-tunnel)
-/usr/bin/tun0-routes.sh 2>/dev/null || true
-
 # --- Перезагрузка ---
 if [ "$1" != "--no-reboot" ]; then
   echo "Перезагрузка через 5 сек (отмена: Ctrl+C). Для установки без перезагрузки: $0 --no-reboot"
