@@ -51,7 +51,7 @@ fi
 
 echo "Установка пакетов..."
 opkg update -q
-opkg install curl nano unzip luci-theme-openwrt-2020 xz-utils
+opkg install curl nano unzipxz-utils kmod-tun luci-theme-openwrt-2020 
 command -v xz >/dev/null 2>&1 || opkg install xz 2>/dev/null || true
 
 # --- UPX (для сжатия HiddifyCli), если доступен xz ---
