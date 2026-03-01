@@ -7,14 +7,11 @@ set -e
 # --- Версии (обновлять здесь) ---
 HIDDIFY_VER="3.1.8"
 HEV_TUNNEL_VER="2.14.4"
-PBR_VER="1.2.2-8"
 UPX_VER="4.2.4"
 
 # --- Остальные константы ---
 REPO_RAW="https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main"
 HEV_CONF="/etc/hev-socks5-tunnel.yml"
-PBR_IPK_URL="https://github.com/mossdef-org/pbr/releases/download/v${PBR_VER}/pbr-${PBR_VER}_openwrt-24.10_all.ipk"
-LUCI_PBR_IPK_URL="https://github.com/mossdef-org/luci-app-pbr/releases/download/v${PBR_VER}/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk"
 SUBSCRIPTION_FILE="/root/hiddify_subscription.url"
 APPCONF="/root/appconf.conf"
 CIDR_FILE="/root/cidr4.txt"
@@ -27,7 +24,7 @@ fi
 
 # --- Очистка при выходе ---
 cleanup() {
-  rm -f /tmp/HiddifyCli.tar.gz /tmp/hev-socks5-tunnel-linux-arm64 /tmp/pbr-*.ipk /tmp/luci-app-pbr-*.ipk
+  rm -f /tmp/HiddifyCli.tar.gz /tmp/hev-socks5-tunnel-linux-arm64
   rm -f /tmp/upx-*-arm64_linux.tar.xz
   rm -rf /tmp/upx-*-arm64_linux
 }
@@ -251,44 +248,26 @@ sed -i "s|cidr4\.txt|$CIDR_FILE|g" /usr/bin/get_cidr4.sh
 CRON_CHECK="*/2 * * * * /usr/bin/check_hiddify.sh"
 CRON_REBOOT="0 5 * * * /sbin/reboot"
 CRON_CIDR="0 4 * * * /usr/bin/get_cidr4.sh"
-( crontab -l 2>/dev/null | grep -v check_hiddify.sh | grep -v "get_cidr4.sh" | grep -v "0 5 \* \* \* /sbin/reboot" || true; echo "$CRON_CHECK"; echo "$CRON_REBOOT"; echo "$CRON_CIDR" ) | crontab -
-echo "Cron: check_hiddify — каждые 2 мин, get_cidr4 — 04:00, reboot — 05:00 ежедневно."
+CRON_TUN0="5 4 * * * /usr/bin/tun0-routes.sh"
+( crontab -l 2>/dev/null | grep -v check_hiddify.sh | grep -v "get_cidr4.sh" | grep -v "tun0-routes.sh" | grep -v "0 5 \* \* \* /sbin/reboot" || true; echo "$CRON_CHECK"; echo "$CRON_REBOOT"; echo "$CRON_CIDR"; echo "$CRON_TUN0" ) | crontab -
+echo "Cron: check_hiddify — каждые 2 мин, get_cidr4 — 04:00, tun0-routes — 04:05, reboot — 05:00."
 
-# --- CIDR и PBR ---
+# --- CIDR и маршрутизация через tun0 (скрипт вместо PBR) ---
 /usr/bin/get_cidr4.sh || true
 
-echo "Устанавливаем PBR из mossdef-org (v${PBR_VER})..."
-curl -fL --retry 3 --connect-timeout 10 -o "/tmp/pbr-${PBR_VER}_openwrt-24.10_all.ipk" "$PBR_IPK_URL"
-curl -fL --retry 3 --connect-timeout 10 -o "/tmp/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk" "$LUCI_PBR_IPK_URL"
-opkg install "/tmp/pbr-${PBR_VER}_openwrt-24.10_all.ipk" "/tmp/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk"
-uci set pbr.config.enabled="1"
-uci commit pbr
-uci set dhcp.lan.force="1"
-uci commit dhcp
+echo "Устанавливаем скрипт маршрутизации tun0 (ip rule + ip route)..."
+wget -q --no-cache -O /usr/bin/tun0-routes.sh "$REPO_RAW/tun0-routes.sh$_CACHE_BUST"
+chmod +x /usr/bin/tun0-routes.sh
 
-# Удаление старых правил PBR
-while uci get pbr.@policy[0] >/dev/null 2>&1; do uci delete pbr.@policy[0]; done
-while uci get pbr.@dns_policy[0] >/dev/null 2>&1; do uci delete pbr.@dns_policy[0]; done
-
-uci add pbr policy
-uci set pbr.@policy[-1].name="torrents"
-uci set pbr.@policy[-1].src_port="1725 6881-6889"
-uci set pbr.@policy[-1].interface="wan"
-uci set pbr.@policy[-1].enabled="1"
-
-uci add pbr policy
-uci set pbr.@policy[-1].name="cidr4"
-uci set pbr.@policy[-1].dest_addr="file://$CIDR_FILE"
-uci set pbr.@policy[-1].interface="tun0"
-uci set pbr.@policy[-1].enabled="1"
-uci commit pbr
-
-# rc.local: запуск PBR после загрузки (идемпотентно)
-if ! grep -q "/etc/init.d/pbr start" /etc/rc.local 2>/dev/null; then
+# rc.local: запуск tun0-routes после подъёма tun0 (идемпотентно)
+if ! grep -q "tun0-routes.sh" /etc/rc.local 2>/dev/null; then
   [ ! -f /etc/rc.local ] && echo "#!/bin/sh" > /etc/rc.local
   grep -q '^exit 0' /etc/rc.local || echo "exit 0" >> /etc/rc.local
-  sed -i '/^exit 0/i (sleep 10; /etc/init.d/pbr start) \&' /etc/rc.local
+  sed -i '/^exit 0/i (sleep 15; /usr/bin/tun0-routes.sh) \&' /etc/rc.local
 fi
+
+# Запуск один раз сейчас (tun0 уже поднят hev-socks5-tunnel)
+/usr/bin/tun0-routes.sh 2>/dev/null || true
 
 # --- Перезагрузка ---
 if [ "$1" != "--no-reboot" ]; then
@@ -296,6 +275,5 @@ if [ "$1" != "--no-reboot" ]; then
   sleep 5
   reboot
 else
-  /etc/init.d/pbr start 2>/dev/null || true
   echo "Готово. Перезагрузка не выполнена (--no-reboot)."
 fi
