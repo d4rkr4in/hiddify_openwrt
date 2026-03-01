@@ -8,6 +8,7 @@ set -e
 HIDDIFY_VER="3.1.8"
 HEV_TUNNEL_VER="2.14.4"
 PBR_VER="1.2.2-8"
+UPX_VER="4.2.4"
 
 # --- Остальные константы ---
 REPO_RAW="https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main"
@@ -27,6 +28,8 @@ fi
 # --- Очистка при выходе ---
 cleanup() {
   rm -f /tmp/HiddifyCli.tar.gz /tmp/hev-socks5-tunnel-linux-arm64 /tmp/pbr-*.ipk /tmp/luci-app-pbr-*.ipk
+  rm -f /tmp/upx-*-arm64_linux.tar.xz
+  rm -rf /tmp/upx-*-arm64_linux
 }
 trap cleanup EXIT
 
@@ -51,13 +54,22 @@ fi
 
 echo "Установка пакетов..."
 opkg update -q
-opkg install curl nano unzip luci-theme-openwrt-2020
+opkg install curl nano unzip luci-theme-openwrt-2020 xz-utils
+
+# --- UPX (для сжатия HiddifyCli) ---
+echo "Устанавливаем UPX ${UPX_VER}..."
+curl -fL --retry 3 --connect-timeout 10 -o "/tmp/upx-${UPX_VER}-arm64_linux.tar.xz" \
+  "https://github.com/upx/upx/releases/download/v${UPX_VER}/upx-${UPX_VER}-arm64_linux.tar.xz"
+tar -xJf "/tmp/upx-${UPX_VER}-arm64_linux.tar.xz" -C /tmp
+mv "/tmp/upx-${UPX_VER}-arm64_linux/upx" /usr/bin/upx
+chmod +x /usr/bin/upx
 
 # --- HiddifyCli ---
 echo "Устанавливаем HiddifyCli..."
 curl -fL --retry 3 --connect-timeout 10 -o /tmp/HiddifyCli.tar.gz \
   "https://github.com/hiddify/hiddify-core/releases/download/v${HIDDIFY_VER}/hiddify-cli-linux-arm64.tar.gz"
 tar -xzf /tmp/HiddifyCli.tar.gz -C /tmp
+upx -1 /tmp/HiddifyCli
 mv /tmp/HiddifyCli /usr/bin/
 chmod +x /usr/bin/HiddifyCli
 
