@@ -219,6 +219,20 @@ echo "Cron: check_hiddify — каждые 2 мин, get_cidr4 — 04:00, reboot
 
 echo "Устанавливаем PBR..."
 opkg install pbr luci-app-pbr
+# Проверка синтаксиса init-скрипта (в некоторых сборках PBR он приходит с ошибкой)
+if ! sh -n /etc/init.d/pbr 2>/dev/null; then
+  echo "Ошибка синтаксиса в /etc/init.d/pbr, переустанавливаем пакет..."
+  opkg install --force-reinstall pbr luci-app-pbr 2>/dev/null || true
+fi
+if ! sh -n /etc/init.d/pbr 2>/dev/null; then
+  echo "Внимание: /etc/init.d/pbr по-прежнему с ошибкой. Проверьте версию OpenWrt и пакета pbr (opkg list-installed | grep pbr)." >&2
+  echo "Варианты: обновить прошивку, переустановить вручную: opkg remove pbr luci-app-pbr && opkg install pbr luci-app-pbr" >&2
+fi
+# Секция pbr.config может отсутствовать, если конфиг пустой (пакет был установлен ранее без luci-app-pbr)
+if ! uci get pbr.config >/dev/null 2>&1; then
+  uci add pbr config
+  uci rename pbr.@config[0]=config
+fi
 uci set pbr.config.enabled="1"
 uci commit pbr
 uci set dhcp.lan.force="1"
