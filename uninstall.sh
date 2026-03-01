@@ -68,20 +68,27 @@ if [ -f /etc/rc.local ]; then
   sed -i '/pbr start/d' /etc/rc.local
 fi
 
-# --- PBR: полное удаление (сервис, конфиг, пакеты) ---
+# --- PBR: полное удаление (сервис, конфиги, пакеты) ---
 echo "Полное удаление PBR..."
+# Если init-скрипт сломан, подменяем минимальным, иначе service stop и opkg remove падают
+if ! sh -n /etc/init.d/pbr 2>/dev/null; then
+  cat > /etc/init.d/pbr << 'PBR_MINI'
+#!/bin/sh /etc/rc.common
+START=94
+STOP=10
+start_service() { return 0; }
+stop_service()  { return 0; }
+PBR_MINI
+  chmod +x /etc/init.d/pbr
+fi
 service pbr stop 2>/dev/null || true
 service pbr disable 2>/dev/null || true
-if [ -f /etc/config/pbr ]; then
-  uci set pbr.config.enabled="0" 2>/dev/null || true
-  while uci get pbr.@policy[0] >/dev/null 2>&1; do uci delete pbr.@policy[0]; done
-  while uci get pbr.@dns_policy[0] >/dev/null 2>&1; do uci delete pbr.@dns_policy[0]; done
-  uci commit pbr 2>/dev/null || true
-  rm -f /etc/config/pbr
-fi
+# Удаляем все конфиги PBR (чтобы opkg не оставлял pbr-opkg и не спрашивал про conffile)
+rm -f /etc/config/pbr /etc/config/pbr-opkg
+[ -d /etc/pbr.d ] && rm -rf /etc/pbr.d
 uci delete dhcp.lan.force 2>/dev/null || true
 uci commit dhcp 2>/dev/null || true
-# Удаление пакетов PBR (полное удаление)
+# Удаление пакетов PBR
 opkg remove --autoremove pbr luci-app-pbr 2>/dev/null || true
 
 # --- Удаление интерфейса tun0 из network ---
@@ -132,7 +139,7 @@ echo "  - удалены /usr/bin/HiddifyCli, hev-socks5-tunnel, tun2socks, get_
 echo "  - удалены $APPCONF, $CIDR_FILE (файл подписки $SUBSCRIPTION_FILE сохранён)"
 echo "  - убраны задания cron (check_hiddify, get_cidr4, reboot)"
 echo "  - убрана строка PBR из rc.local"
-echo "  - PBR полностью удалён (сервис, конфиг /etc/config/pbr, пакеты pbr, luci-app-pbr)"
+echo "  - PBR полностью удалён (сервис, /etc/config/pbr, /etc/config/pbr-opkg, /etc/pbr.d, пакеты)"
 echo "  - удалены интерфейс tun0 и зона firewall tun"
 if [ "$REMOVE_PACKAGES" = "1" ]; then
   echo "  - удалён kmod-tun"
