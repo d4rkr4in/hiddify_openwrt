@@ -57,7 +57,7 @@ command -v xz >/dev/null 2>&1 || opkg install xz 2>/dev/null || true
 USE_UPX=0
 if command -v xz >/dev/null 2>&1; then
   echo "Устанавливаем UPX ${UPX_VER}..."
-  if curl -fL --retry 3 --connect-timeout 10 -o "/tmp/upx-${UPX_VER}-arm64_linux.tar.xz" \
+  if curl -fL --retry 10 --connect-timeout 10 -o "/tmp/upx-${UPX_VER}-arm64_linux.tar.xz" \
     "https://github.com/upx/upx/releases/download/v${UPX_VER}/upx-${UPX_VER}-arm64_linux.tar.xz" 2>/dev/null && \
     xz -dc "/tmp/upx-${UPX_VER}-arm64_linux.tar.xz" | tar -xf - -C /tmp 2>/dev/null && \
     [ -f "/tmp/upx-${UPX_VER}-arm64_linux/upx" ]; then
@@ -73,7 +73,7 @@ fi
 
 # --- HiddifyCli ---
 echo "Устанавливаем HiddifyCli..."
-curl -fL --retry 3 --connect-timeout 10 -o /tmp/HiddifyCli.tar.gz \
+curl -fL --retry 10 --connect-timeout 10 -o /tmp/HiddifyCli.tar.gz \
   "https://github.com/hiddify/hiddify-core/releases/download/v${HIDDIFY_VER}/hiddify-cli-linux-arm64.tar.gz"
 tar -xzf /tmp/HiddifyCli.tar.gz -C /tmp
 [ "$USE_UPX" = "1" ] && command -v upx >/dev/null 2>&1 && upx -1 /tmp/HiddifyCli 2>/dev/null || true
@@ -142,7 +142,7 @@ service HiddifyCli enable
 
 # --- hev-socks5-tunnel (tun2socks) ---
 echo "Устанавливаем hev-socks5-tunnel..."
-curl -fL --retry 3 --connect-timeout 10 -o /tmp/hev-socks5-tunnel-linux-arm64 \
+curl -fL --retry 10 --connect-timeout 10 -o /tmp/hev-socks5-tunnel-linux-arm64 \
   "https://github.com/heiher/hev-socks5-tunnel/releases/download/${HEV_TUNNEL_VER}/hev-socks5-tunnel-linux-arm64"
 mv /tmp/hev-socks5-tunnel-linux-arm64 /usr/bin/hev-socks5-tunnel
 chmod +x /usr/bin/hev-socks5-tunnel
