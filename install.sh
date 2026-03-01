@@ -234,12 +234,9 @@ service hev-socks5-tunnel enable
 
 # --- Вспомогательные скрипты ---
 # Параметр ?t= обходит кэш GitHub/CDN, заголовки — просьба не отдавать кэш
-_CACHE_BUST="?t=$(date +%s)"
 echo "Загружаем get_cidr4.sh и check_hiddify.sh..."
-wget -q --header="Cache-Control: no-cache" --header="Pragma: no-cache" \
-  -O /usr/bin/get_cidr4.sh "$REPO_RAW/get_cidr4.sh$_CACHE_BUST"
-wget -q --header="Cache-Control: no-cache" --header="Pragma: no-cache" \
-  -O /usr/bin/check_hiddify.sh "$REPO_RAW/check_hiddify.sh$_CACHE_BUST"
+wget -q -O /usr/bin/get_cidr4.sh "$REPO_RAW/get_cidr4.sh"
+wget -q -O /usr/bin/check_hiddify.sh "$REPO_RAW/check_hiddify.sh"
 chmod +x /usr/bin/get_cidr4.sh /usr/bin/check_hiddify.sh
 # get_cidr4.sh по умолчанию пишет в текущую директорию — задаём абсолютный путь для cron
 sed -i "s|cidr4\.txt|$CIDR_FILE|g" /usr/bin/get_cidr4.sh
@@ -256,7 +253,7 @@ echo "Cron: check_hiddify — каждые 2 мин, get_cidr4 — 04:00, tun0-r
 /usr/bin/get_cidr4.sh || true
 
 echo "Устанавливаем скрипт маршрутизации tun0 (ip rule + ip route)..."
-wget -q --no-cache -O /usr/bin/tun0-routes.sh "$REPO_RAW/tun0-routes.sh$_CACHE_BUST"
+wget -q -O /usr/bin/tun0-routes.sh "$REPO_RAW/tun0-routes.sh"
 chmod +x /usr/bin/tun0-routes.sh
 
 # rc.local: запуск tun0-routes после подъёма tun0 (идемпотентно)
