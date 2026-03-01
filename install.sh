@@ -95,38 +95,33 @@ start_service() {
     procd_set_param stderr 1
     procd_set_param respawn
     procd_close_instance
-    # После подъёма tun0 восстановить правила маршрутизации (ip rule/route table 200)
-    procd_open_instance "tun0-routes"
-    procd_set_param command /bin/sh -c "sleep 10; /usr/bin/tun0-routes.sh"
-    procd_set_param oneshot 1
-    procd_close_instance
 }
 EOF
 
-# --- appconf.conf ---
+# --- appconf.conf (оптимизировано под OpenWrt: меньше логов, реже проверки, безопасный MTU) ---
 echo "Создаём конфигурацию..."
 cat > "$APPCONF" << 'APPCONF_EOF'
 {
   "region": "other",
   "block-ads": false,
-  "use-xray-core-when-possible": false,
+  "use-xray-core-when-possible": true,
   "execute-config-as-is": false,
-  "log-level": "warn",
+  "log-level": "error",
   "resolve-destination": false,
   "ipv6-mode": "ipv4_only",
   "remote-dns-address": "udp://1.1.1.1",
   "remote-dns-domain-strategy": "",
-  "direct-dns-address": "1.1.1.1",
+  "direct-dns-address": "tls://1.1.1.1",
   "direct-dns-domain-strategy": "",
   "mixed-port": 12334,
   "tproxy-port": 12335,
   "local-dns-port": 16450,
   "tun-implementation": "gvisor",
-  "mtu": 9000,
+  "mtu": 1400,
   "strict-route": true,
   "connection-test-url": "http://cp.cloudflare.com",
-  "url-test-interval": 600,
-  "enable-clash-api": true,
+  "url-test-interval": 900,
+  "enable-clash-api": false,
   "clash-api-port": 16756,
   "enable-tun": false,
   "enable-tun-service": false,
@@ -229,11 +224,6 @@ start_service() {
     procd_set_param stderr 1
     procd_set_param respawn
     procd_close_instance
-    # После подъёма tun0 восстановить правила маршрутизации (ip rule/route table 200)
-    procd_open_instance "tun0-routes"
-    procd_set_param command /bin/sh -c "sleep 10; /usr/bin/tun0-routes.sh"
-    procd_set_param oneshot 1
-    procd_close_instance
 }
 HEV_INIT_EOF
 chmod 755 /etc/init.d/hev-socks5-tunnel
@@ -262,6 +252,26 @@ echo "Cron: check_hiddify — каждые 2 мин, get_cidr4 — 04:00, reboot
 echo "Устанавливаем скрипт маршрутизации tun0 (ip rule + ip route)..."
 wget -q -O /usr/bin/tun0-routes.sh "$REPO_RAW/tun0-routes.sh"
 chmod +x /usr/bin/tun0-routes.sh
+
+# --- Сервис tun0-routes в автозапуске (START=50, ждёт tun0 до 60 с) ---
+echo "Создаём сервис tun0-routes..."
+cat > /etc/init.d/tun0-routes << 'TUN0ROUTES_EOF'
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+START=50
+STOP=89
+
+start_service() {
+    procd_open_instance
+    procd_set_param command /bin/sh -c 'i=0; while [ $i -lt 12 ]; do ip link show tun0 >/dev/null 2>&1 && /usr/bin/tun0-routes.sh && break; i=$((i+1)); sleep 5; done'
+    procd_set_param oneshot 1
+    procd_close_instance
+}
+TUN0ROUTES_EOF
+chmod 755 /etc/init.d/tun0-routes
+service tun0-routes enable
+service tun0-routes start
 
 # --- Перезагрузка ---
 if [ "$1" != "--no-reboot" ]; then
