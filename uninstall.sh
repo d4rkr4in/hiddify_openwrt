@@ -19,9 +19,11 @@ echo "=== Удаление Hiddify и связанных компонентов 
 echo "Останавливаем сервисы..."
 service HiddifyCli stop 2>/dev/null || true
 service hev-socks5-tunnel stop 2>/dev/null || true
+service tun0-routes stop 2>/dev/null || true
 service tun2socks stop 2>/dev/null || true
 service HiddifyCli disable 2>/dev/null || true
 service hev-socks5-tunnel disable 2>/dev/null || true
+service tun0-routes disable 2>/dev/null || true
 service tun2socks disable 2>/dev/null || true
 # Принудительно завершаем процессы (иначе rm даёт "Stale file handle" / "Text file busy")
 killall HiddifyCli 2>/dev/null || true
@@ -33,6 +35,8 @@ sleep 2
 echo "Удаляем init-скрипты..."
 rm -f /etc/init.d/HiddifyCli
 rm -f /etc/init.d/hev-socks5-tunnel
+rm -f /etc/init.d/tun0-routes
+rm -f /etc/hotplug.d/iface/99-tun0-routes
 rm -f /etc/init.d/tun2socks
 
 # --- Удаление бинарников и скриптов ---
