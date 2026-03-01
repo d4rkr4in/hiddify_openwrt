@@ -55,7 +55,7 @@ rm -f /etc/hev-socks5-tunnel.yml
 # --- Удаление конфигов и данных в /root ---
 echo "Удаляем конфигурации..."
 rm -f "$APPCONF"
-rm -f "$SUBSCRIPTION_FILE"
+# Файл подписки не удаляем — можно использовать при повторной установке
 rm -f "$CIDR_FILE"
 
 # --- Удаление заданий cron ---
@@ -129,7 +129,7 @@ echo "=== Удаление завершено ==="
 echo "Сделано:"
 echo "  - остановлены и удалены сервисы HiddifyCli, hev-socks5-tunnel, tun2socks"
 echo "  - удалены /usr/bin/HiddifyCli, hev-socks5-tunnel, tun2socks, get_cidr4.sh, check_hiddify.sh, /etc/hev-socks5-tunnel.yml"
-echo "  - удалены $APPCONF, $SUBSCRIPTION_FILE, $CIDR_FILE"
+echo "  - удалены $APPCONF, $CIDR_FILE (файл подписки $SUBSCRIPTION_FILE сохранён)"
 echo "  - убраны задания cron (check_hiddify, get_cidr4, reboot)"
 echo "  - убрана строка PBR из rc.local"
 echo "  - PBR полностью удалён (сервис, конфиг /etc/config/pbr, пакеты pbr, luci-app-pbr)"
