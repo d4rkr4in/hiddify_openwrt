@@ -84,6 +84,10 @@ if [ -f /etc/config/pbr ]; then
   rm -f /etc/config/pbr
 fi
 
+# --- Удаление остальных пакетов из install.sh ---
+echo "Удаляем пакеты: curl, nano, unzip, luci-theme-openwrt-2020, kmod-tun..."
+opkg remove curl nano unzip luci-theme-openwrt-2020 kmod-tun 2>/dev/null || true
+
 # --- Удаление интерфейса tun0 из network ---
 echo "Удаляем интерфейс tun0 из network..."
 if uci get network.tun0 >/dev/null 2>&1; then
@@ -114,16 +118,6 @@ while uci get firewall.@forwarding[$i] >/dev/null 2>&1; do
   i=$((i + 1))
 done
 
-# --- Дополнительное удаление пакетов (опционально) ---
-REMOVE_PACKAGES=0
-for arg in "$@"; do
-  [ "$arg" = "--remove-packages" ] && REMOVE_PACKAGES=1
-done
-if [ "$REMOVE_PACKAGES" = "1" ]; then
-  echo "Удаляем kmod-tun (может использоваться другими — удаляйте при необходимости)..."
-  opkg remove kmod-tun 2>/dev/null || true
-fi
-
 echo ""
 echo "=== Удаление завершено ==="
 echo "Сделано:"
@@ -134,12 +128,7 @@ echo "  - убраны задания cron (check_hiddify, get_cidr4, reboot)"
 echo "  - убрана строка PBR из rc.local"
 echo "  - PBR полностью удалён (сервис, конфиг /etc/config/pbr, пакеты pbr, luci-app-pbr)"
 echo "  - удалены интерфейс tun0 и зона firewall tun"
-if [ "$REMOVE_PACKAGES" = "1" ]; then
-  echo "  - удалён kmod-tun"
-fi
-echo ""
-echo "Пакеты curl, nano, unzip, luci-theme-openwrt-2020 не удалялись."
-echo "Чтобы удалить и их: opkg remove curl nano unzip luci-theme-openwrt-2020"
+echo "  - удалены пакеты: curl, nano, unzip, luci-theme-openwrt-2020, xz-utils/xz, kmod-tun, pbr, luci-app-pbr"
 echo ""
 
 # --- Перезагрузка ---
