@@ -63,25 +63,29 @@ rm -f "$CIDR_FILE"
 
 # --- Удаление заданий cron ---
 echo "Удаляем задания cron..."
-( crontab -l 2>/dev/null | grep -v check_hiddify.sh | grep -v "get_cidr4.sh" | grep -v "0 5 \* \* \* /sbin/reboot" || true ) | crontab - 2>/dev/null || true
+( crontab -l 2>/dev/null | grep -v check_hiddify.sh | grep -v "get_cidr4.sh" | grep -v "tun0-routes.sh" | grep -v "0 5 \* \* \* /sbin/reboot" || true ) | crontab - 2>/dev/null || true
 
-# --- Удаление строки PBR из rc.local ---
-echo "Удаляем запуск PBR из rc.local..."
+# --- Удаление маршрутизации tun0 (скрипт + правила) ---
+echo "Удаляем скрипт tun0-routes и правила маршрутизации..."
+_rm_retry /usr/bin/tun0-routes.sh || true
+rm -f /overlay/upper/usr/bin/tun0-routes.sh 2>/dev/null || true
+# Удалить правила и таблицу 200 (как в tun0-routes.sh; 254 = main — не трогать)
+while ip rule del table 200 2>/dev/null; do :; done
+ip route flush table 200 2>/dev/null || true
 if [ -f /etc/rc.local ]; then
-  sed -i '/pbr start/d' /etc/rc.local
+  sed -i '/tun0-routes\.sh/d' /etc/rc.local
 fi
+( crontab -l 2>/dev/null | grep -v tun0-routes.sh || true ) | crontab - 2>/dev/null || true
 
-# --- PBR: полное удаление (сервис, конфиг, пакеты) ---
-echo "Полное удаление PBR..."
+# --- PBR: удаление, если был установлен ранее ---
 service pbr stop 2>/dev/null || true
 service pbr disable 2>/dev/null || true
-
 uci delete dhcp.lan.force 2>/dev/null || true
 uci commit dhcp 2>/dev/null || true
-# Удаление пакетов PBR (полное удаление)
 opkg remove pbr luci-app-pbr --force-depends 2>/dev/null || true
-if [ -f /etc/config/pbr ]; then
-  rm -f /etc/config/pbr
+rm -f /etc/config/pbr 2>/dev/null || true
+if [ -f /etc/rc.local ]; then
+  sed -i '/pbr start/d' /etc/rc.local
 fi
 
 # --- Удаление остальных пакетов из install.sh ---
@@ -125,10 +129,10 @@ echo "  - остановлены и удалены сервисы HiddifyCli, he
 echo "  - удалены /usr/bin/HiddifyCli, hev-socks5-tunnel, tun2socks, upx, get_cidr4.sh, check_hiddify.sh, /etc/hev-socks5-tunnel.yml, пакет xz/xz-utils"
 echo "  - удалены $APPCONF, $CIDR_FILE (файл подписки $SUBSCRIPTION_FILE сохранён)"
 echo "  - убраны задания cron (check_hiddify, get_cidr4, reboot)"
-echo "  - убрана строка PBR из rc.local"
-echo "  - PBR полностью удалён (сервис, конфиг /etc/config/pbr, пакеты pbr, luci-app-pbr)"
+echo "  - удалены скрипт tun0-routes.sh, правила и таблица 200, строки в rc.local и cron"
+echo "  - при наличии: PBR (сервис, конфиг, пакеты) удалён"
 echo "  - удалены интерфейс tun0 и зона firewall tun"
-echo "  - удалены пакеты: curl, nano, unzip, luci-theme-openwrt-2020, xz-utils/xz, kmod-tun, pbr, luci-app-pbr"
+echo "  - удалены пакеты: curl, nano, unzip, luci-theme-openwrt-2020, xz-utils/xz, kmod-tun (и pbr при наличии)"
 echo ""
 
 # --- Перезагрузка ---
