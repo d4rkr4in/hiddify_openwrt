@@ -258,7 +258,7 @@ chmod +x /usr/bin/tun0-routes.sh
 if ! grep -q "tun0-routes.sh" /etc/rc.local 2>/dev/null; then
   [ ! -f /etc/rc.local ] && echo "#!/bin/sh" > /etc/rc.local
   grep -q '^exit 0' /etc/rc.local || echo "exit 0" >> /etc/rc.local
-  sed -i '/^exit 0/i (sleep 10; /usr/bin/tun0-routes.sh) \&' /etc/rc.local
+  sed -i '/^exit 0/i (sleep 15; /usr/bin/tun0-routes.sh) \&' /etc/rc.local
 fi
 
 # --- Перезагрузка ---
