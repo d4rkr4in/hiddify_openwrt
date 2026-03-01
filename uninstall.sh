@@ -62,23 +62,21 @@ if [ -f /etc/rc.local ]; then
   sed -i '/pbr start/d' /etc/rc.local
 fi
 
-# --- PBR: удаление правил и отключение ---
-echo "Отключаем PBR и удаляем правила..."
+# --- PBR: полное удаление (сервис, конфиг, пакеты) ---
+echo "Полное удаление PBR..."
+service pbr stop 2>/dev/null || true
+service pbr disable 2>/dev/null || true
 if [ -f /etc/config/pbr ]; then
   uci set pbr.config.enabled="0" 2>/dev/null || true
+  while uci get pbr.@policy[0] >/dev/null 2>&1; do uci delete pbr.@policy[0]; done
+  while uci get pbr.@dns_policy[0] >/dev/null 2>&1; do uci delete pbr.@dns_policy[0]; done
   uci commit pbr 2>/dev/null || true
-  # удалить все policy (в т.ч. torrents и cidr4)
-  while uci get pbr.@policy[0] >/dev/null 2>&1; do
-    uci delete pbr.@policy[0]
-  done
-  while uci get pbr.@dns_policy[0] >/dev/null 2>&1; do
-    uci delete pbr.@dns_policy[0]
-  done
-  uci commit pbr 2>/dev/null || true
+  rm -f /etc/config/pbr
 fi
-# вернуть dhcp.lan.force (убрать принудительную перезапись)
 uci delete dhcp.lan.force 2>/dev/null || true
 uci commit dhcp 2>/dev/null || true
+# Удаление пакетов PBR (полное удаление)
+opkg remove --autoremove pbr luci-app-pbr 2>/dev/null || true
 
 # --- Удаление интерфейса tun0 из network ---
 echo "Удаляем интерфейс tun0 из network..."
@@ -110,15 +108,13 @@ while uci get firewall.@forwarding[$i] >/dev/null 2>&1; do
   i=$((i + 1))
 done
 
-# --- Удаление пакетов (опционально) ---
+# --- Дополнительное удаление пакетов (опционально) ---
 REMOVE_PACKAGES=0
 for arg in "$@"; do
   [ "$arg" = "--remove-packages" ] && REMOVE_PACKAGES=1
 done
 if [ "$REMOVE_PACKAGES" = "1" ]; then
-  echo "Удаляем пакеты PBR и опционально kmod-tun..."
-  opkg remove --autoremove pbr luci-app-pbr 2>/dev/null || true
-  # kmod-tun может использоваться другими — удаляем только если не нужен
+  echo "Удаляем kmod-tun (может использоваться другими — удаляйте при необходимости)..."
   opkg remove kmod-tun 2>/dev/null || true
 fi
 
@@ -130,10 +126,10 @@ echo "  - удалены /usr/bin/HiddifyCli, tun2socks, get_cidr4.sh, check_hid
 echo "  - удалены $APPCONF, $SUBSCRIPTION_FILE, $CIDR_FILE"
 echo "  - убраны задания cron (check_hiddify, get_cidr4, reboot)"
 echo "  - убрана строка PBR из rc.local"
-echo "  - отключён PBR и удалены его правила"
+echo "  - PBR полностью удалён (сервис, конфиг /etc/config/pbr, пакеты pbr, luci-app-pbr)"
 echo "  - удалены интерфейс tun0 и зона firewall tun"
 if [ "$REMOVE_PACKAGES" = "1" ]; then
-  echo "  - удалены пакеты pbr, luci-app-pbr (и при возможности kmod-tun)"
+  echo "  - удалён kmod-tun"
 fi
 echo ""
 echo "Пакеты curl, nano, unzip, luci-theme-openwrt-2020 не удалялись."
