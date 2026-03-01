@@ -238,7 +238,6 @@ echo "Устанавливаем PBR из mossdef-org (v${PBR_VER})..."
 curl -fL --retry 3 --connect-timeout 10 -o "/tmp/pbr-${PBR_VER}_openwrt-24.10_all.ipk" "$PBR_IPK_URL"
 curl -fL --retry 3 --connect-timeout 10 -o "/tmp/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk" "$LUCI_PBR_IPK_URL"
 opkg install "/tmp/pbr-${PBR_VER}_openwrt-24.10_all.ipk" "/tmp/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk"
-ns
 uci set pbr.config.enabled="1"
 uci commit pbr
 uci set dhcp.lan.force="1"
