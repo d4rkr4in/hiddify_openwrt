@@ -244,7 +244,9 @@ fi
 if ! sh -n /etc/init.d/pbr 2>/dev/null; then
   echo "Внимание: PBR может не запускаться. Проверьте: service pbr status" >&2
 fi
-# Секция pbr.config может отсутствовать, если конфиг пустой (пакет был установлен ранее без luci-app-pbr)
+# Конфиг может отсутствовать после rm перед install — создаём файл, иначе "uci add pbr config" даёт Entry not found
+[ -f /etc/config/pbr ] || touch /etc/config/pbr
+# Секция pbr.config может отсутствовать, если конфиг пустой
 if ! uci get pbr.config >/dev/null 2>&1; then
   uci add pbr config
   uci rename pbr.@config[0]=config
