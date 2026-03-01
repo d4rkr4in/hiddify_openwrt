@@ -5,7 +5,7 @@
 set -e
 
 # --- Версии (обновлять здесь) ---
-HIDDIFY_VER="v3.1.8"
+HIDDIFY_VER="v4.0.3"
 HEV_TUNNEL_VER="2.14.4"
 PBR_VER="1.2.2-8"
 
@@ -149,6 +149,12 @@ if uci get network.wan >/dev/null 2>&1; then
   uci commit network
 fi
 
+# --- Удаление интерфейса wan6 (если есть) ---
+if uci get network.wan6 >/dev/null 2>&1; then
+  uci delete network.wan6
+  uci commit network
+fi
+
 # --- Firewall ---
 if ! grep -q "option name 'tun'" /etc/config/firewall 2>/dev/null; then
   cat >> /etc/config/firewall << 'FW_EOF'
@@ -232,7 +238,7 @@ echo "Устанавливаем PBR из mossdef-org (v${PBR_VER})..."
 curl -fL --retry 3 --connect-timeout 10 -o "/tmp/pbr-${PBR_VER}_openwrt-24.10_all.ipk" "$PBR_IPK_URL"
 curl -fL --retry 3 --connect-timeout 10 -o "/tmp/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk" "$LUCI_PBR_IPK_URL"
 opkg install "/tmp/pbr-${PBR_VER}_openwrt-24.10_all.ipk" "/tmp/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk"
-
+ns
 uci set pbr.config.enabled="1"
 uci commit pbr
 uci set dhcp.lan.force="1"
