@@ -143,7 +143,6 @@ service HiddifyCli enable
 
 # --- hev-socks5-tunnel (tun2socks) ---
 echo "Устанавливаем hev-socks5-tunnel..."
-opkg install kmod-tun
 curl -fL --retry 3 --connect-timeout 10 -o /tmp/hev-socks5-tunnel-linux-arm64 \
   "https://github.com/heiher/hev-socks5-tunnel/releases/download/${HEV_TUNNEL_VER}/hev-socks5-tunnel-linux-arm64"
 mv /tmp/hev-socks5-tunnel-linux-arm64 /usr/bin/hev-socks5-tunnel
