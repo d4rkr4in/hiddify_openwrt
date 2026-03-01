@@ -7,8 +7,10 @@ set -e
 # --- Константы (удобно обновлять версии) ---
 HIDDIFY_VER="v4.0.3"
 HIDDIFY_ARCH="arm64"
-TUN2SOCKS_VER="v2.5.2"
+HEV_TUNNEL_VER="2.14.4"
+HEV_TUNNEL_ARCH="arm64"
 REPO_RAW="https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main"
+HEV_CONF="/etc/hev-socks5-tunnel.yml"
 SUBSCRIPTION_FILE="/root/hiddify_subscription.url"
 APPCONF="/root/appconf.conf"
 CIDR_FILE="/root/cidr4.txt"
@@ -21,8 +23,7 @@ fi
 
 # --- Очистка при выходе ---
 cleanup() {
-  rm -f /tmp/HiddifyCli.tar.gz /tmp/tun2socks-linux-arm64.zip
-  [ -d /tmp/tun2socks-linux-arm64 ] && rm -rf /tmp/tun2socks-linux-arm64
+  rm -f /tmp/HiddifyCli.tar.gz /tmp/hev-socks5-tunnel-linux-arm64
 }
 trap cleanup EXIT
 
@@ -117,14 +118,13 @@ service HiddifyCli start
 service HiddifyCli status
 service HiddifyCli enable
 
-# --- Tun2Socks ---
-echo "Устанавливаем Tun2Socks..."
-curl -fL --retry 3 --connect-timeout 10 -o /tmp/tun2socks-linux-arm64.zip \
-  "https://github.com/xjasonlyu/tun2socks/releases/download/${TUN2SOCKS_VER}/tun2socks-linux-arm64.zip"
+# --- hev-socks5-tunnel (tun2socks) ---
+echo "Устанавливаем hev-socks5-tunnel..."
 opkg install kmod-tun
-unzip -o /tmp/tun2socks-linux-arm64.zip -d /tmp
-mv /tmp/tun2socks-linux-arm64 /usr/bin/tun2socks
-chmod +x /usr/bin/tun2socks
+curl -fL --retry 3 --connect-timeout 10 -o /tmp/hev-socks5-tunnel-linux-arm64 \
+  "https://github.com/heiher/hev-socks5-tunnel/releases/download/${HEV_TUNNEL_VER}/hev-socks5-tunnel-linux-${HEV_TUNNEL_ARCH}"
+mv /tmp/hev-socks5-tunnel-linux-arm64 /usr/bin/hev-socks5-tunnel
+chmod +x /usr/bin/hev-socks5-tunnel
 
 # --- Интерфейс tun0 ---
 if ! grep -q "interface 'tun0'" /etc/config/network 2>/dev/null; then
@@ -160,8 +160,22 @@ config forwarding
 FW_EOF
 fi
 
-# --- init tun2socks ---
-cat > /etc/init.d/tun2socks << 'TUN2_EOF'
+# --- Конфиг и init hev-socks5-tunnel ---
+echo "Создаём конфиг hev-socks5-tunnel..."
+cat > "$HEV_CONF" << 'HEV_YAML_EOF'
+tunnel:
+  name: tun0
+  mtu: 9000
+  multi-queue: false
+  ipv4: 172.16.250.1
+
+socks5:
+  address: 127.0.0.1
+  port: 12334
+  udp: 'udp'
+HEV_YAML_EOF
+
+cat > /etc/init.d/hev-socks5-tunnel << HEV_INIT_EOF
 #!/bin/sh /etc/rc.common
 
 USE_PROCD=1
@@ -170,21 +184,25 @@ STOP=89
 
 start_service() {
     procd_open_instance
-    procd_set_param command /usr/bin/tun2socks -device tun0 -proxy "socks5://127.0.0.1:12334"
+    procd_set_param command /usr/bin/hev-socks5-tunnel $HEV_CONF
     procd_set_param stdout 1
     procd_set_param stderr 1
     procd_set_param respawn
     procd_close_instance
 }
-TUN2_EOF
-chmod 755 /etc/init.d/tun2socks
-service tun2socks start
-service tun2socks enable
+HEV_INIT_EOF
+chmod 755 /etc/init.d/hev-socks5-tunnel
+service hev-socks5-tunnel start
+service hev-socks5-tunnel enable
 
 # --- Вспомогательные скрипты ---
+# Параметр ?t= обходит кэш GitHub/CDN, заголовки — просьба не отдавать кэш
+_CACHE_BUST="?t=$(date +%s)"
 echo "Загружаем get_cidr4.sh и check_hiddify.sh..."
-wget -q -O /usr/bin/get_cidr4.sh "$REPO_RAW/get_cidr4.sh"
-wget -q -O /usr/bin/check_hiddify.sh "$REPO_RAW/check_hiddify.sh"
+wget -q --header="Cache-Control: no-cache" --header="Pragma: no-cache" \
+  -O /usr/bin/get_cidr4.sh "$REPO_RAW/get_cidr4.sh$_CACHE_BUST"
+wget -q --header="Cache-Control: no-cache" --header="Pragma: no-cache" \
+  -O /usr/bin/check_hiddify.sh "$REPO_RAW/check_hiddify.sh$_CACHE_BUST"
 chmod +x /usr/bin/get_cidr4.sh /usr/bin/check_hiddify.sh
 # get_cidr4.sh по умолчанию пишет в текущую директорию — задаём абсолютный путь для cron
 sed -i "s|cidr4\.txt|$CIDR_FILE|g" /usr/bin/get_cidr4.sh
