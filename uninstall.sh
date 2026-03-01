@@ -2,6 +2,8 @@
 # Полное удаление установки Hiddify + OpenWrt (обратный скрипт к install.sh)
 # Запуск: ./uninstall.sh [--remove-packages] [--no-reboot]
 
+set -e
+
 SUBSCRIPTION_FILE="/root/hiddify_subscription.url"
 APPCONF="/root/appconf.conf"
 CIDR_FILE="/root/cidr4.txt"
@@ -19,6 +21,10 @@ service HiddifyCli stop 2>/dev/null || true
 service tun2socks stop 2>/dev/null || true
 service HiddifyCli disable 2>/dev/null || true
 service tun2socks disable 2>/dev/null || true
+# Принудительно завершаем процессы (иначе rm даёт "Stale file handle" / "Text file busy")
+killall HiddifyCli 2>/dev/null || true
+killall tun2socks 2>/dev/null || true
+sleep 2
 
 # --- Удаление init-скриптов ---
 echo "Удаляем init-скрипты..."
@@ -26,11 +32,19 @@ rm -f /etc/init.d/HiddifyCli
 rm -f /etc/init.d/tun2socks
 
 # --- Удаление бинарников и скриптов ---
+# Удаление с повтором: после остановки процесса ядро может ещё держать file handle
 echo "Удаляем бинарники и скрипты..."
-rm -f /usr/bin/HiddifyCli
-rm -f /usr/bin/tun2socks
-rm -f /usr/bin/get_cidr4.sh
-rm -f /usr/bin/check_hiddify.sh
+_rm_retry() {
+  _f="$1"; _n=0
+  while [ $_n -lt 3 ]; do
+    rm -f "$_f" 2>/dev/null && return 0
+    _n=$((_n + 1)); sleep 1
+  done
+  return 1
+}
+_rm_retry /usr/bin/HiddifyCli || echo "  Предупреждение: не удалось удалить /usr/bin/HiddifyCli (перезагрузка и повторный uninstall помогут)" >&2
+_rm_retry /usr/bin/tun2socks || echo "  Предупреждение: не удалось удалить /usr/bin/tun2socks" >&2
+rm -f /usr/bin/get_cidr4.sh /usr/bin/check_hiddify.sh
 
 # --- Удаление конфигов и данных в /root ---
 echo "Удаляем конфигурации..."
