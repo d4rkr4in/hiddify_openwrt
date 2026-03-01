@@ -1,42 +1,73 @@
 #!/bin/sh
+# Оптимизированный установщик Hiddify + OpenWrt (d4rkr4in/hiddify_openwrt)
+# Изменения: обработка ошибок, идемпотентность, константы, очистка, правка путей
 
-# Проверка на root-права
+set -e
+
+# --- Константы (удобно обновлять версии) ---
+HIDDIFY_VER="v4.0.3"
+HIDDIFY_ARCH="arm64"
+TUN2SOCKS_VER="v2.5.2"
+REPO_RAW="https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main"
+SUBSCRIPTION_FILE="/root/hiddify_subscription.url"
+APPCONF="/root/appconf.conf"
+CIDR_FILE="/root/cidr4.txt"
+
+# --- Проверка root ---
 if [ "$(id -u)" -ne 0 ]; then
   echo "Этот скрипт должен быть запущен с правами root" >&2
   exit 1
 fi
 
-# Устанавливаем нужные пакеты
+# --- Очистка при выходе ---
+cleanup() {
+  rm -f /tmp/HiddifyCli.tar.gz /tmp/tun2socks-linux-arm64.zip
+  [ -d /tmp/tun2socks-linux-arm64 ] && rm -rf /tmp/tun2socks-linux-arm64
+}
+trap cleanup EXIT
+
+# --- Запрос ссылки на подписку ---
+if [ -f "$SUBSCRIPTION_FILE" ] && [ -s "$SUBSCRIPTION_FILE" ]; then
+  read -p "Найдена сохранённая ссылка. Использовать её? [Y/n]: " use_saved
+  case "${use_saved:-y}" in
+    [nN]|[nN][oO]) use_saved="" ;;
+    *) SUBSCRIPTION_LINK=$(cat "$SUBSCRIPTION_FILE"); use_saved=1 ;;
+  esac
+fi
+if [ -z "$use_saved" ]; then
+  while true; do
+    read -p "Введите ССЫЛКУ_НА_ПОДПИСКУ: " SUBSCRIPTION_LINK
+    if [ -n "$SUBSCRIPTION_LINK" ]; then
+      break
+    fi
+    echo "Ошибка: Ссылка на подписку не может быть пустой" >&2
+  done
+  printf '%s' "$SUBSCRIPTION_LINK" > "$SUBSCRIPTION_FILE"
+fi
+
+echo "Установка пакетов..."
+opkg update -q
 opkg install curl nano unzip luci-theme-openwrt-2020
 
-# Цикл запроса ссылки на подписку, пока она пуста
-while true; do
-  read -p "Введите ССЫЛКУ_НА_ПОДПИСКУ: " SUBSCRIPTION_LINK
-  if [ -n "$SUBSCRIPTION_LINK" ]; then
-    break
-  fi
-  echo "Ошибка: Ссылка на подписку не может быть пустой" >&2
-done
-
-echo "Начинаем установку HiddifyCli и настройку окружения..."
-
-# Установка HiddifyCli
+# --- HiddifyCli ---
 echo "Устанавливаем HiddifyCli..."
-curl -L --retry 5 --connect-timeout 5 -o /tmp/HiddifyCli.tar.gz \
-https://github.com/hiddify/hiddify-core/releases/download/v4.0.3/hiddify-cli-linux-arm64.tar.gz
-tar -xvzf /tmp/HiddifyCli.tar.gz -C /tmp  
-mv /tmp/HiddifyCli /usr/bin/  
-chmod +x /usr/bin/HiddifyCli 
+curl -fL --retry 3 --connect-timeout 10 -o /tmp/HiddifyCli.tar.gz \
+  "https://github.com/hiddify/hiddify-core/releases/download/${HIDDIFY_VER}/hiddify-cli-linux-${HIDDIFY_ARCH}.tar.gz"
+tar -xzf /tmp/HiddifyCli.tar.gz -C /tmp
+mv /tmp/HiddifyCli /usr/bin/
+chmod +x /usr/bin/HiddifyCli
 
-cat > /etc/init.d/HiddifyCli <<EOF
+cat > /etc/init.d/HiddifyCli << EOF
 #!/bin/sh /etc/rc.common
 START=40
 STOP=89
 USE_PROCD=1
 
 start_service() {
+    _sub=\$(cat $SUBSCRIPTION_FILE 2>/dev/null)
+    [ -z "\$_sub" ] && return 1
     procd_open_instance
-    procd_set_param command /usr/bin/HiddifyCli run -c "$SUBSCRIPTION_LINK" -d /root/appconf.conf
+    procd_set_param command /usr/bin/HiddifyCli run -c "\$_sub" -d $APPCONF
     procd_set_param stdout 1
     procd_set_param stderr 1
     procd_set_param respawn
@@ -44,9 +75,9 @@ start_service() {
 }
 EOF
 
-# Создание конфигурационного файла
-echo "Создаем конфигурационный файл appconf.conf..."
-cat > /root/appconf.conf <<EOF
+# --- appconf.conf ---
+echo "Создаём конфигурацию..."
+cat > "$APPCONF" << 'APPCONF_EOF'
 {
   "region": "other",
   "block-ads": false,
@@ -79,58 +110,58 @@ cat > /root/appconf.conf <<EOF
   "independent-dns-cache": true,
   "rules": []
 }
-EOF
+APPCONF_EOF
 
-chmod 755 /etc/init.d/HiddifyCli  
-service HiddifyCli start && service HiddifyCli status
+chmod 755 /etc/init.d/HiddifyCli
+service HiddifyCli start
+service HiddifyCli status
+service HiddifyCli enable
 
-# Установка Tun2Socks
+# --- Tun2Socks ---
 echo "Устанавливаем Tun2Socks..."
-curl -L --retry 5 --connect-timeout 5 -o /tmp/tun2socks-linux-arm64.zip \
-https://github.com/xjasonlyu/tun2socks/releases/download/v2.5.2/tun2socks-linux-arm64.zip
+curl -fL --retry 3 --connect-timeout 10 -o /tmp/tun2socks-linux-arm64.zip \
+  "https://github.com/xjasonlyu/tun2socks/releases/download/${TUN2SOCKS_VER}/tun2socks-linux-arm64.zip"
 opkg install kmod-tun
-unzip /tmp/tun2socks-linux-arm64.zip
+unzip -o /tmp/tun2socks-linux-arm64.zip -d /tmp
 mv /tmp/tun2socks-linux-arm64 /usr/bin/tun2socks
+chmod +x /usr/bin/tun2socks
 
-# Настройка сети
-echo "Настраиваем сетевой интерфейс..."
-cat >> /etc/config/network <<EOF
+# --- Интерфейс tun0 ---
+if ! grep -q "interface 'tun0'" /etc/config/network 2>/dev/null; then
+  cat >> /etc/config/network << 'NET_EOF'
+
 config interface 'tun0'
-        option device 'tun0'
-        option proto 'static'
-        option ipaddr '172.16.250.1'
-        option netmask '255.255.255.0'
-EOF
+	option device 'tun0'
+	option proto 'static'
+	option ipaddr '172.16.250.1'
+	option netmask '255.255.255.0'
+NET_EOF
+fi
 
-# Настройка фаервола
-echo "Настраиваем firewall..."
-cat >> /etc/config/firewall <<EOF
+# --- Firewall ---
+if ! grep -q "option name 'tun'" /etc/config/firewall 2>/dev/null; then
+  cat >> /etc/config/firewall << 'FW_EOF'
+
 config zone
-        option name 'tun'
-        option forward 'ACCEPT'
-        option output 'ACCEPT'
-        option input 'REJECT'
-        option masq '1'
-        option mtu_fix '1'
-        option device 'tun0'
-        option family 'ipv4'
+	option name 'tun'
+	option forward 'ACCEPT'
+	option output 'ACCEPT'
+	option input 'REJECT'
+	option masq '1'
+	option mtu_fix '1'
+	option device 'tun0'
+	option family 'ipv4'
 
 config forwarding
-        option name 'lan-tun'
-        option dest 'tun'
-        option src 'lan'
-        option family 'ipv4'
-EOF
+	option name 'lan-tun'
+	option dest 'tun'
+	option src 'lan'
+	option family 'ipv4'
+FW_EOF
+fi
 
-# Создание init скрипта для tun2socks
-echo "Создаем init скрипт для tun2socks..."
-PROTO="socks5"
-HOST="localhost"
-PORT="12334"
-PROG="/usr/bin/tun2socks"
-IF="tun0"
-
-cat > /etc/init.d/tun2socks <<EOF
+# --- init tun2socks ---
+cat > /etc/init.d/tun2socks << 'TUN2_EOF'
 #!/bin/sh /etc/rc.common
 
 USE_PROCD=1
@@ -139,78 +170,72 @@ STOP=89
 
 start_service() {
     procd_open_instance
-    procd_set_param command "$PROG" -device "$IF" -proxy "$PROTO"://"$HOST":"$PORT"
+    procd_set_param command /usr/bin/tun2socks -device tun0 -proxy "socks5://127.0.0.1:12334"
     procd_set_param stdout 1
     procd_set_param stderr 1
     procd_set_param respawn
     procd_close_instance
 }
-EOF
-
+TUN2_EOF
 chmod 755 /etc/init.d/tun2socks
 service tun2socks start
-service HiddifyCli enable && service tun2socks enable
+service tun2socks enable
 
-# Загрузка CIDR списка и настройка PBR
-echo "Загружаем CIDR список и настраиваем PBR..."
-wget -q -O /usr/bin/get_cidr4.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/get_cidr4.sh
-chmod +x  /usr/bin/get_cidr4.sh
-/usr/bin/get_cidr4.sh
+# --- Вспомогательные скрипты ---
+echo "Загружаем get_cidr4.sh и check_hiddify.sh..."
+wget -q -O /usr/bin/get_cidr4.sh "$REPO_RAW/get_cidr4.sh"
+wget -q -O /usr/bin/check_hiddify.sh "$REPO_RAW/check_hiddify.sh"
+chmod +x /usr/bin/get_cidr4.sh /usr/bin/check_hiddify.sh
+# get_cidr4.sh по умолчанию пишет в текущую директорию — задаём абсолютный путь для cron
+sed -i "s|cidr4\.txt|$CIDR_FILE|g" /usr/bin/get_cidr4.sh
 
-# Загрузка скрипта check_hiddify.sh
-echo "Скачиваем скрипт check_hiddify.sh..."
-wget -q -O /usr/bin/check_hiddify.sh https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main/check_hiddify.sh
-chmod +x /usr/bin/check_hiddify.sh
-
-# Задания для crontab
-echo "Добавляем задания в crontab..."
-CRON_CHECK_HIDDIFY="*/2 * * * * /usr/bin/check_hiddify.sh"
+# --- Crontab (без дубликатов) ---
+CRON_CHECK="*/2 * * * * /usr/bin/check_hiddify.sh"
 CRON_REBOOT="0 5 * * * /sbin/reboot"
-CRON_GET_CIDR4="0 4 * * * /usr/bin/get_cidr4.sh"
+CRON_CIDR="0 4 * * * /usr/bin/get_cidr4.sh"
+( crontab -l 2>/dev/null | grep -v check_hiddify.sh | grep -v "get_cidr4.sh" | grep -v "0 5 \* \* \* /sbin/reboot" || true; echo "$CRON_CHECK"; echo "$CRON_REBOOT"; echo "$CRON_CIDR" ) | crontab -
+echo "Cron: check_hiddify — каждые 2 мин, get_cidr4 — 04:00, reboot — 05:00 ежедневно."
 
-# Читаем текущий crontab, добавляем новые строки, удаляя дубликаты
-(crontab -l 2>/dev/null; echo "$CRON_CHECK_HIDDIFY"; echo "$CRON_REBOOT"; echo "$CRON_GET_CIDR4") \
-  | sort -u | crontab -
+# --- CIDR и PBR ---
+/usr/bin/get_cidr4.sh || true
 
-echo "Готово: check_hiddify.sh будут запускаться каждые 2 минуты, get_cidr4.sh каждый день в 4 утра, а система — перезагружаться в воскресенье в 4 утра."
-
-# Установка PBR
-echo "Устанавливаем Policy Based Routing..."
+echo "Устанавливаем PBR..."
 opkg install pbr luci-app-pbr
 uci set pbr.config.enabled="1"
 uci commit pbr
-uci set dhcp.lan.force='1'
+uci set dhcp.lan.force="1"
 uci commit dhcp
 
-# Удаление всех policy и dns_policy правил
-echo "== Удаление всех PBR правил =="
-INDEX=0
-while uci get pbr.@policy[$INDEX] >/dev/null 2>&1; do
-  uci delete pbr.@policy[$INDEX]
-done
-
-INDEX=0
-while uci get pbr.@dns_policy[$INDEX] >/dev/null 2>&1; do
-  uci delete pbr.@dns_policy[$INDEX]
-done
-uci commit pbr
-
-# Добавляем правило в PBR для CIDR списка
-uci add pbr policy
-uci set pbr.@policy[-1].name='torrents'
-# Исключаем порты для торрентов и Steam
-uci set pbr.@policy[-1].src_port='1725 6881-6889'
-uci set pbr.@policy[-1].interface='wan'
-uci set pbr.@policy[-1].enabled='1'
+# Удаление старых правил PBR
+while uci get pbr.@policy[0] >/dev/null 2>&1; do uci delete pbr.@policy[0]; done
+while uci get pbr.@dns_policy[0] >/dev/null 2>&1; do uci delete pbr.@dns_policy[0]; done
 
 uci add pbr policy
-uci set pbr.@policy[-1].name='cidr4'
-uci set pbr.@policy[-1].dest_addr='file:///root/cidr4.txt'
-uci set pbr.@policy[-1].interface='tun0'
-uci set pbr.@policy[-1].enabled='1'
+uci set pbr.@policy[-1].name="torrents"
+uci set pbr.@policy[-1].src_port="1725 6881-6889"
+uci set pbr.@policy[-1].interface="wan"
+uci set pbr.@policy[-1].enabled="1"
+
+uci add pbr policy
+uci set pbr.@policy[-1].name="cidr4"
+uci set pbr.@policy[-1].dest_addr="file://$CIDR_FILE"
+uci set pbr.@policy[-1].interface="tun0"
+uci set pbr.@policy[-1].enabled="1"
 uci commit pbr
 
-sed -i '/^exit 0/i (sleep 10; /etc/init.d/pbr start) &' /etc/rc.local
+# rc.local: запуск PBR после загрузки (идемпотентно)
+if ! grep -q "/etc/init.d/pbr start" /etc/rc.local 2>/dev/null; then
+  [ ! -f /etc/rc.local ] && echo "#!/bin/sh" > /etc/rc.local
+  grep -q '^exit 0' /etc/rc.local || echo "exit 0" >> /etc/rc.local
+  sed -i '/^exit 0/i (sleep 10; /etc/init.d/pbr start) \&' /etc/rc.local
+fi
 
-echo "Применяем изменения и перезагружаемся..."
-reboot
+# --- Перезагрузка ---
+if [ "$1" != "--no-reboot" ]; then
+  echo "Перезагрузка через 5 сек (отмена: Ctrl+C). Для установки без перезагрузки: $0 --no-reboot"
+  sleep 5
+  reboot
+else
+  /etc/init.d/pbr start 2>/dev/null || true
+  echo "Готово. Перезагрузка не выполнена (--no-reboot)."
+fi
