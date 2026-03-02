@@ -1,5 +1,6 @@
 #!/bin/sh
 # Policy routing: dst из cidr4.txt → mark 200 → table 200 → tun0. ipset + iptables mangle.
+# Исключение: порты 6881-6889 и 27015-27050 (dst) не маркируются — трафик не через tun0.
 
 TABLE=200
 FWMARK=200
@@ -7,6 +8,7 @@ PRIO=30100
 IPSET_NAME="tun0_cidr4"
 CIDR_FILE="/root/cidr4.txt"
 LOCKFILE="/var/run/tun0-routes.lock"
+EXCLUDE_PORTS="6881:6889,27015:27050"
 
 [ -z "$(ip link show tun0 2>/dev/null)" ] && { echo "tun0 не найден." >&2; exit 1; }
 command -v ipset >/dev/null 2>&1 || { echo "ipset не найден." >&2; exit 1; }
@@ -27,10 +29,20 @@ _main() {
     [ -z "$line" ] || skip "$line" || ipset add "$IPSET_NAME" "$line" 2>/dev/null
   done < "$CIDR_FILE"
 
+  # Удалить старые правила (с портами и без)
   iptables -t mangle -D PREROUTING -m set --match-set "$IPSET_NAME" dst -j MARK --set-mark "$FWMARK" 2>/dev/null
   iptables -t mangle -D OUTPUT -m set --match-set "$IPSET_NAME" dst -j MARK --set-mark "$FWMARK" 2>/dev/null
-  iptables -t mangle -A PREROUTING -m set --match-set "$IPSET_NAME" dst -j MARK --set-mark "$FWMARK" 2>/dev/null || exit 1
-  iptables -t mangle -A OUTPUT -m set --match-set "$IPSET_NAME" dst -j MARK --set-mark "$FWMARK" 2>/dev/null || exit 1
+  for chain in PREROUTING OUTPUT; do
+    iptables -t mangle -D "$chain" -m set --match-set "$IPSET_NAME" dst -p tcp -m multiport ! --dports "$EXCLUDE_PORTS" -j MARK --set-mark "$FWMARK" 2>/dev/null
+    iptables -t mangle -D "$chain" -m set --match-set "$IPSET_NAME" dst -p udp -m multiport ! --dports "$EXCLUDE_PORTS" -j MARK --set-mark "$FWMARK" 2>/dev/null
+    iptables -t mangle -D "$chain" -m set --match-set "$IPSET_NAME" dst ! -p tcp ! -p udp -j MARK --set-mark "$FWMARK" 2>/dev/null
+  done
+  # Маркировать: dst в set, кроме tcp/udp с dport 6881-6889
+  for chain in PREROUTING OUTPUT; do
+    iptables -t mangle -A "$chain" -m set --match-set "$IPSET_NAME" dst -p tcp -m multiport ! --dports "$EXCLUDE_PORTS" -j MARK --set-mark "$FWMARK" 2>/dev/null || exit 1
+    iptables -t mangle -A "$chain" -m set --match-set "$IPSET_NAME" dst -p udp -m multiport ! --dports "$EXCLUDE_PORTS" -j MARK --set-mark "$FWMARK" 2>/dev/null || exit 1
+    iptables -t mangle -A "$chain" -m set --match-set "$IPSET_NAME" dst ! -p tcp ! -p udp -j MARK --set-mark "$FWMARK" 2>/dev/null || exit 1
+  done
 }
 
 if command -v flock >/dev/null 2>&1; then
