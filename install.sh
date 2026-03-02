@@ -231,7 +231,6 @@ service hev-socks5-tunnel start
 service hev-socks5-tunnel enable
 
 # --- Вспомогательные скрипты ---
-# Параметр ?t= обходит кэш GitHub/CDN, заголовки — просьба не отдавать кэш
 echo "Загружаем get_cidr4.sh и check_hiddify.sh..."
 wget -q -O /usr/bin/get_cidr4.sh "$REPO_RAW/get_cidr4.sh"
 wget -q -O /usr/bin/check_hiddify.sh "$REPO_RAW/check_hiddify.sh"
@@ -249,7 +248,7 @@ echo "Cron: check_hiddify — каждые 2 мин, get_cidr4 — 04:00, reboot
 # --- CIDR и маршрутизация через tun0 (скрипт вместо PBR) ---
 /usr/bin/get_cidr4.sh || true
 
-echo "Устанавливаем скрипт маршрутизации tun0 (ip rule + ip route)..."
+echo "Устанавливаем скрипт маршрутизации tun0 (ipset + iptables mangle + ip rule)..."
 wget -q -O /usr/bin/tun0-routes.sh "$REPO_RAW/tun0-routes.sh"
 chmod +x /usr/bin/tun0-routes.sh
 
