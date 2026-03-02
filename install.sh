@@ -263,7 +263,7 @@ STOP=89
 
 start_service() {
     procd_open_instance
-    procd_set_param command /bin/sh -c '[ ! -s /root/cidr4.txt ] && /usr/bin/get_cidr4.sh || true; while true; do ip link show tun0 >/dev/null 2>&1 && /usr/bin/tun0-routes.sh; sleep 30; done'
+    procd_set_param command /bin/sh -c '[ ! -s /root/cidr4.txt ] && /usr/bin/get_cidr4.sh || true; while true; do ip link show tun0 >/dev/null 2>&1 && /usr/bin/tun0-routes.sh; sleep 10; done'
     procd_set_param respawn 0
     procd_close_instance
 }
