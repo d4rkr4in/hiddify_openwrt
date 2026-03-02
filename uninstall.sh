@@ -73,7 +73,7 @@ echo "Удаляем задания cron..."
 echo "Удаляем скрипт tun0-routes и правила маршрутизации..."
 _rm_retry /usr/bin/tun0-routes.sh || true
 rm -f /overlay/upper/usr/bin/tun0-routes.sh 2>/dev/null || true
-# Удалить ip rule, таблицу 200, nft (текущая реализация) и следы iptables/ipset (старая реализация)
+# Удалить ip rule, таблицу 200, iptables mangle и ipset (маршрутизация tun0); nft — при наличии (старые установки)
 while ip rule del table 200 2>/dev/null; do :; done
 ip rule del fwmark 200 table 200 2>/dev/null || true
 ip route flush table 200 2>/dev/null || true
@@ -98,7 +98,7 @@ if [ -f /etc/rc.local ]; then
 fi
 
 # --- Удаление остальных пакетов из install.sh ---
-echo "Удаляем пакеты: curl, nano, unzip, luci-theme-openwrt-2020, kmod-tun (если установлен)..."
+echo "Удаляем пакеты: curl, nano, unzip, luci-theme-openwrt-2020, kmod-tun, ipset, kmod-ipt-ipset..."
 opkg remove curl nano unzip luci-theme-openwrt-2020 kmod-tun nftables ipset kmod-ipt-ipset 2>/dev/null || true
 
 # --- Удаление интерфейса tun0 из network ---
@@ -135,13 +135,13 @@ echo ""
 echo "=== Удаление завершено ==="
 echo "Сделано:"
 echo "  - остановлены и удалены сервисы HiddifyCli, hev-socks5-tunnel, tun2socks"
-echo "  - удалены /usr/bin/HiddifyCli, hev-socks5-tunnel, tun2socks, upx, get_cidr4.sh, check_hiddify.sh, /etc/hev-socks5-tunnel.yml, пакет xz/xz-utils"
+echo "  - удалены HiddifyCli, hev-socks5-tunnel, tun2socks, upx, get_cidr4.sh, check_hiddify.sh, /etc/hev-socks5-tunnel.yml, пакет xz/xz-utils"
 echo "  - удалены $APPCONF, $CIDR_FILE (файл подписки $SUBSCRIPTION_FILE сохранён)"
 echo "  - убраны задания cron (check_hiddify, get_cidr4, reboot)"
-echo "  - удалены скрипт tun0-routes.sh, правила и таблица 200, строки в rc.local и cron"
+echo "  - удалены скрипт tun0-routes.sh, сервис и hotplug, ip rule/таблица 200, iptables mangle, ipset; при наличии — nft table tun0_routes"
 echo "  - при наличии: PBR (сервис, конфиг, пакеты) удалён"
 echo "  - удалены интерфейс tun0 и зона firewall tun"
-echo "  - удалены пакеты: curl, nano, unzip, luci-theme-openwrt-2020, xz-utils/xz, kmod-tun (и pbr при наличии)"
+echo "  - удалены пакеты: curl, nano, unzip, luci-theme-openwrt-2020, xz-utils/xz, kmod-tun, ipset, kmod-ipt-ipset (и pbr при наличии)"
 echo ""
 
 # --- Перезагрузка ---
