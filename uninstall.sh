@@ -73,9 +73,13 @@ echo "Удаляем задания cron..."
 echo "Удаляем скрипт tun0-routes и правила маршрутизации..."
 _rm_retry /usr/bin/tun0-routes.sh || true
 rm -f /overlay/upper/usr/bin/tun0-routes.sh 2>/dev/null || true
-# Удалить правила и таблицу 200 (как в tun0-routes.sh; 254 = main — не трогать)
+# Удалить ip rule, таблицу 200, iptables mangle и ipset (реализация ipset+iptables)
 while ip rule del table 200 2>/dev/null; do :; done
+ip rule del fwmark 200 table 200 2>/dev/null || true
 ip route flush table 200 2>/dev/null || true
+iptables -t mangle -D PREROUTING -m set --match-set tun0_cidr4 dst -j MARK --set-mark 200 2>/dev/null || true
+iptables -t mangle -D OUTPUT -m set --match-set tun0_cidr4 dst -j MARK --set-mark 200 2>/dev/null || true
+ipset destroy tun0_cidr4 2>/dev/null || true
 if [ -f /etc/rc.local ]; then
   sed -i '/tun0-routes\.sh/d' /etc/rc.local
 fi
@@ -94,7 +98,7 @@ fi
 
 # --- Удаление остальных пакетов из install.sh ---
 echo "Удаляем пакеты: curl, nano, unzip, luci-theme-openwrt-2020, kmod-tun (если установлен)..."
-opkg remove curl nano unzip luci-theme-openwrt-2020 kmod-tun 2>/dev/null || true
+opkg remove curl nano unzip luci-theme-openwrt-2020 kmod-tun ipset kmod-ipt-ipset 2>/dev/null || true
 
 # --- Удаление интерфейса tun0 из network ---
 echo "Удаляем интерфейс tun0 из network..."
