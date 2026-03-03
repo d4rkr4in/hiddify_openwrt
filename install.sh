@@ -185,27 +185,8 @@ if uci get network.wan6 >/dev/null 2>&1; then
   uci commit network
 fi
 
-# --- Firewall ---
-if ! grep -q "option name 'tun'" /etc/config/firewall 2>/dev/null; then
-  cat >> /etc/config/firewall << 'FW_EOF'
-
-config zone
-	option name 'tun'
-	option forward 'ACCEPT'
-	option output 'ACCEPT'
-	option input 'REJECT'
-	option masq '1'
-	option mtu_fix '1'
-	option device 'tun0'
-	option family 'ipv4'
-
-config forwarding
-	option name 'lan-tun'
-	option dest 'tun'
-	option src 'lan'
-	option family 'ipv4'
-FW_EOF
-fi
+# --- Firewall: зону tun и forward lan→tun не добавляем: политика PBR только chain=output,
+# трафик клиентов в tun0 не идёт; добавление зоны ломало интернет на клиентах даже при остановленном PBR.
 
 # --- Конфиг и init hev-socks5-tunnel ---
 echo "Создаём конфиг hev-socks5-tunnel..."
@@ -277,10 +258,12 @@ uci set pbr.config.enabled='1'
 uci delete pbr.config.supported_interface 2>/dev/null || true
 uci add_list pbr.config.supported_interface='tun0'
 
-# Политика: трафик к адресам из cidr4.txt — через tun0, кроме портов 6881-6889 и 27015-27050
+# Политика: трафик к адресам из cidr4.txt — через tun0, кроме портов 6881-6889 и 27015-27050.
+# chain=output: только трафик с роутера; трафик клиентов (forward) не трогаем — интернет на LAN сохраняется.
 POLICY_SECTION=$(uci add pbr policy)
 uci set pbr."$POLICY_SECTION".name='tun0_cidr4'
 uci set pbr."$POLICY_SECTION".interface='tun0'
+uci set pbr."$POLICY_SECTION".chain='output'
 uci set pbr."$POLICY_SECTION".dest_addr="file://$CIDR_FILE"
 uci set pbr."$POLICY_SECTION".dest_port='!6881:6889 !27015:27050'
 uci commit pbr
