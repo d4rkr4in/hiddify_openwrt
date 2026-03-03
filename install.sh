@@ -270,8 +270,9 @@ check_download /tmp/luci-app-pbr.ipk
 opkg install /tmp/pbr.ipk /tmp/luci-app-pbr.ipk
 
 echo "Настраиваем PBR (интерфейс tun0, список CIDR из $CIDR_FILE, исключение портов 6881-6889, 27015-27050)..."
-echo "Очищаем все правила PBR..."
+echo "Очищаем все правила PBR (policy, dns_policy, include)..."
 while uci delete pbr.@policy[0] 2>/dev/null; do :; done
+while uci delete pbr.@dns_policy[0] 2>/dev/null; do :; done
 while uci delete pbr.@include[0] 2>/dev/null; do :; done
 uci commit pbr 2>/dev/null || true
 
