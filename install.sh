@@ -287,7 +287,7 @@ uci add_list pbr.config.supported_interface='tun0'
 POLICY_WAN=$(uci add pbr policy)
 uci set pbr."$POLICY_WAN".name='wan_ports'
 uci set pbr."$POLICY_WAN".interface='wan'
-uci set pbr."$POLICY_WAN".dest_port='6881:6889 27015:27050'
+uci set pbr."$POLICY_WAN".dest_port='6881-6889 27015-27050'
 
 # Политика 2: трафик к адресам из cidr4.txt — через tun0.
 # chain=output: только трафик с роутера; трафик клиентов (forward) не трогаем.
