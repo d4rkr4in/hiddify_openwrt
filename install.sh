@@ -309,7 +309,6 @@ if ! uci get pbr.config >/dev/null 2>&1; then
 fi
 uci set pbr.config.enabled='1'
 uci delete pbr.config.supported_interface 2>/dev/null || true
-uci add_list pbr.config.supported_interface='tun0'
 
 # Политика 1: порты 6881-6889 и 27015-27050 — всегда через WAN (выше tun0_cidr4, чтобы обрабатывалась первой).
 POLICY_WAN=$(uci add pbr policy)
