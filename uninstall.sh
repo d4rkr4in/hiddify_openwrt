@@ -109,15 +109,19 @@ fi
 echo "  PBR удалён."
 
 # --- Удаление остальных пакетов из install.sh ---
-echo "Удаляем пакеты: curl, nano, unzip, luci-theme-openwrt-2020, kmod-tun, ipset, kmod-ipt-ipset..."
-opkg remove curl nano unzip luci-theme-openwrt-2020 kmod-tun nftables ipset kmod-ipt-ipset 2>/dev/null || true
+echo "Удаляем пакеты: unzip, luci-theme-openwrt-2020, kmod-tun, ipset, kmod-ipt-ipset..."
+opkg remove unzip luci-theme-openwrt-2020 kmod-tun nftables ipset kmod-ipt-ipset 2>/dev/null || true
 
-# --- Удаление интерфейса tun0 из network ---
-echo "Удаляем интерфейс tun0 из network..."
+# --- Откат network: tun0, wan (dns/peerdns) ---
+echo "Откатываем изменения network (tun0, wan dns)..."
 if uci get network.tun0 >/dev/null 2>&1; then
   uci delete network.tun0
-  uci commit network
 fi
+if uci get network.wan >/dev/null 2>&1; then
+  uci delete network.wan.peerdns 2>/dev/null || true
+  uci delete network.wan.dns 2>/dev/null || true
+fi
+uci commit network 2>/dev/null || true
 
 # --- Удаление зоны tun и forwarding lan-tun из firewall ---
 echo "Удаляем зону tun и forwarding из firewall..."
@@ -151,8 +155,8 @@ echo "  - удалены $APPCONF, $CIDR_FILE (файл подписки $SUBSCR
 echo "  - убраны задания cron (check_hiddify, get_cidr4, reboot)"
 echo "  - удалены скрипт tun0-routes.sh, сервис и hotplug, ip rule/таблица 200, iptables mangle, ipset; при наличии — nft table tun0_routes"
 echo "  - при наличии: PBR полностью удалён (сервис, конфиг, nft-файлы, luci-app-pbr, pbr)"
-echo "  - удалены интерфейс tun0 и зона firewall tun"
-echo "  - удалены пакеты: curl, nano, unzip, luci-theme-openwrt-2020, xz-utils/xz, kmod-tun, ipset, kmod-ipt-ipset (и pbr при наличии)"
+echo "  - откатаны network: интерфейс tun0, wan (peerdns/dns); удалены зона firewall tun и forward lan-tun"
+echo "  - удалены пакеты: unzip, luci-theme-openwrt-2020, xz-utils/xz, kmod-tun, ipset, kmod-ipt-ipset (и pbr при наличии)"
 echo ""
 
 echo "При необходимости перезагрузите роутер вручную."
