@@ -86,16 +86,27 @@ if [ -f /etc/rc.local ]; then
 fi
 ( crontab -l 2>/dev/null | grep -v tun0-routes.sh || true ) | crontab - 2>/dev/null || true
 
-# --- PBR: удаление, если был установлен ранее ---
+# --- PBR: полное удаление (сервис, конфиг, сгенерированные файлы, пакеты) ---
+echo "Удаляем PBR..."
 service pbr stop 2>/dev/null || true
 service pbr disable 2>/dev/null || true
+killall pbr 2>/dev/null || true
+sleep 1
+# Сгенерированные nft-файлы и рантайм
+rm -f /var/run/pbr.nft 2>/dev/null || true
+rm -f /usr/share/nftables.d/ruleset-post/30-pbr.nft 2>/dev/null || true
+# Конфиг UCI
+rm -f /etc/config/pbr 2>/dev/null || true
+# Откат опции dhcp, которую мог требовать PBR
 uci delete dhcp.lan.force 2>/dev/null || true
 uci commit dhcp 2>/dev/null || true
-opkg remove pbr luci-app-pbr --force-depends 2>/dev/null || true
-rm -f /etc/config/pbr 2>/dev/null || true
+# Сначала luci-app-pbr, затем pbr
+opkg remove luci-app-pbr --force-depends 2>/dev/null || true
+opkg remove pbr --force-depends 2>/dev/null || true
 if [ -f /etc/rc.local ]; then
   sed -i '/pbr start/d' /etc/rc.local
 fi
+echo "  PBR удалён."
 
 # --- Удаление остальных пакетов из install.sh ---
 echo "Удаляем пакеты: curl, nano, unzip, luci-theme-openwrt-2020, kmod-tun, ipset, kmod-ipt-ipset..."
@@ -139,7 +150,7 @@ echo "  - удалены HiddifyCli, hev-socks5-tunnel, tun2socks, upx, get_cidr
 echo "  - удалены $APPCONF, $CIDR_FILE (файл подписки $SUBSCRIPTION_FILE сохранён)"
 echo "  - убраны задания cron (check_hiddify, get_cidr4, reboot)"
 echo "  - удалены скрипт tun0-routes.sh, сервис и hotplug, ip rule/таблица 200, iptables mangle, ipset; при наличии — nft table tun0_routes"
-echo "  - при наличии: PBR (сервис, конфиг, пакеты) удалён"
+echo "  - при наличии: PBR полностью удалён (сервис, конфиг, nft-файлы, luci-app-pbr, pbr)"
 echo "  - удалены интерфейс tun0 и зона firewall tun"
 echo "  - удалены пакеты: curl, nano, unzip, luci-theme-openwrt-2020, xz-utils/xz, kmod-tun, ipset, kmod-ipt-ipset (и pbr при наличии)"
 echo ""
