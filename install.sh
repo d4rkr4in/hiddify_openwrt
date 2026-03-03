@@ -270,6 +270,11 @@ check_download /tmp/luci-app-pbr.ipk
 opkg install /tmp/pbr.ipk /tmp/luci-app-pbr.ipk
 
 echo "Настраиваем PBR (интерфейс tun0, список CIDR из $CIDR_FILE, исключение портов 6881-6889, 27015-27050)..."
+echo "Очищаем все правила PBR..."
+while uci delete pbr.@policy[0] 2>/dev/null; do :; done
+while uci delete pbr.@include[0] 2>/dev/null; do :; done
+uci commit pbr 2>/dev/null || true
+
 if ! uci get pbr.config >/dev/null 2>&1; then
   uci set pbr.config=config
 fi
@@ -277,11 +282,19 @@ uci set pbr.config.enabled='1'
 uci delete pbr.config.supported_interface 2>/dev/null || true
 uci add_list pbr.config.supported_interface='tun0'
 
-# Политика: трафик к адресам из cidr4.txt — через tun0, кроме портов 6881-6889 и 27015-27050.
-# chain=output: только трафик с роутера; трафик клиентов (forward) не трогаем — интернет на LAN сохраняется.
+# Политика 1: порты 6881-6889 и 27015-27050 — всегда через WAN (выше tun0_cidr4, чтобы обрабатывалась первой).
+POLICY_WAN=$(uci add pbr policy)
+uci set pbr."$POLICY_WAN".name='wan_ports'
+uci set pbr."$POLICY_WAN".interface='wan'
+uci set pbr."$POLICY_WAN".chain='output'
+uci set pbr."$POLICY_WAN".dest_port='6881:6889 27015:27050'
+
+# Политика 2: трафик к адресам из cidr4.txt — через tun0.
+# chain=output: только трафик с роутера; трафик клиентов (forward) не трогаем.
 POLICY_SECTION=$(uci add pbr policy)
 uci set pbr."$POLICY_SECTION".name='tun0_cidr4'
 uci set pbr."$POLICY_SECTION".interface='tun0'
+uci set pbr."$POLICY_SECTION".chain='output'
 uci set pbr."$POLICY_SECTION".dest_addr="file://$CIDR_FILE"
 uci commit pbr
 
@@ -289,11 +302,11 @@ service pbr enable
 service pbr start
 echo "PBR установлен и запущен. Маршрутизация по списку CIDR через tun0."
 
-# --- Перезагрузка ---
-if [ "$1" != "--no-reboot" ]; then
-  echo "Перезагрузка через 5 сек (отмена: Ctrl+C). Для установки без перезагрузки: $0 --no-reboot"
-  sleep 5
-  reboot
+# --- Перезапуск network ---
+if [ "$1" != "--no-restart" ]; then
+  echo "Перезапуск network через 3 сек (отмена: Ctrl+C). Без перезапуска: $0 --no-restart"
+  sleep 3
+  service network restart
 else
-  echo "Готово. Перезагрузка не выполнена (--no-reboot)."
+  echo "Готово. Перезапуск network не выполнен (--no-restart)."
 fi
