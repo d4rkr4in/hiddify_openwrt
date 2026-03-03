@@ -297,6 +297,8 @@ uci set pbr."$POLICY_SECTION".interface='tun0'
 uci set pbr."$POLICY_SECTION".dest_addr="file://$CIDR_FILE"
 uci commit pbr
 
+# PBR запускается последним (START=99), чтобы tun0 уже был поднят
+sed -i 's/^START=.*/START=99/' /etc/init.d/pbr 2>/dev/null || true
 service pbr enable
 echo "PBR установлен. Маршрутизация по списку CIDR через tun0."
 
