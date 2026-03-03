@@ -282,9 +282,7 @@ uci add_list pbr.config.supported_interface='tun0'
 POLICY_SECTION=$(uci add pbr policy)
 uci set pbr."$POLICY_SECTION".name='tun0_cidr4'
 uci set pbr."$POLICY_SECTION".interface='tun0'
-uci set pbr."$POLICY_SECTION".chain='output'
 uci set pbr."$POLICY_SECTION".dest_addr="file://$CIDR_FILE"
-uci set pbr."$POLICY_SECTION".dest_port='!6881:6889 !27015:27050'
 uci commit pbr
 
 service pbr enable
