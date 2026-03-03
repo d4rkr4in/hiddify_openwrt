@@ -251,8 +251,6 @@ echo "Cron: check_hiddify — каждые 2 мин, get_cidr4 + restart PBR —
 
 # --- Установка PBR (mossdef-org) и настройка маршрутизации через tun0 ---
 echo "Устанавливаем PBR и luci-app-pbr..."
-opkg update 2>/dev/null || true
-opkg install resolveip ip-full 2>/dev/null || true
 curl -fL --retry 5 --connect-timeout 15 -o /tmp/pbr.ipk "https://github.com/mossdef-org/pbr/releases/download/v${PBR_VER}/pbr-${PBR_VER}_openwrt-24.10_all.ipk"
 curl -fL --retry 5 --connect-timeout 15 -o /tmp/luci-app-pbr.ipk "https://github.com/mossdef-org/luci-app-pbr/releases/download/v${PBR_VER}/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk"
 opkg install /tmp/pbr.ipk /tmp/luci-app-pbr.ipk
