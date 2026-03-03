@@ -286,7 +286,6 @@ uci add_list pbr.config.supported_interface='tun0'
 POLICY_WAN=$(uci add pbr policy)
 uci set pbr."$POLICY_WAN".name='wan_ports'
 uci set pbr."$POLICY_WAN".interface='wan'
-uci set pbr."$POLICY_WAN".chain='output'
 uci set pbr."$POLICY_WAN".dest_port='6881:6889 27015:27050'
 
 # Политика 2: трафик к адресам из cidr4.txt — через tun0.
@@ -294,13 +293,11 @@ uci set pbr."$POLICY_WAN".dest_port='6881:6889 27015:27050'
 POLICY_SECTION=$(uci add pbr policy)
 uci set pbr."$POLICY_SECTION".name='tun0_cidr4'
 uci set pbr."$POLICY_SECTION".interface='tun0'
-uci set pbr."$POLICY_SECTION".chain='output'
 uci set pbr."$POLICY_SECTION".dest_addr="file://$CIDR_FILE"
 uci commit pbr
 
 service pbr enable
-service pbr start
-echo "PBR установлен и запущен. Маршрутизация по списку CIDR через tun0."
+echo "PBR установлен. Маршрутизация по списку CIDR через tun0."
 
 # --- Перезапуск network ---
 if [ "$1" != "--no-restart" ]; then
@@ -310,3 +307,6 @@ if [ "$1" != "--no-restart" ]; then
 else
   echo "Готово. Перезапуск network не выполнен (--no-restart)."
 fi
+
+echo "Запускаем PBR"
+service pbr start
