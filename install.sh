@@ -303,10 +303,6 @@ service pbr enable
 echo "PBR установлен. Маршрутизация по списку CIDR через tun0."
 
 # --- Перезапуск network ---
-if [ "$1" != "--no-restart" ]; then
-  echo "Перезапуск network через 5 сек (отмена: Ctrl+C). Без перезапуска: $0 --no-restart"
-  sleep 5
-  reboot
-else
-  echo "Готово. Перезапуск network не выполнен (--no-restart)."
-fi
+echo "Перезагрузка через 5 сек (отмена: Ctrl+C)"
+sleep 5
+reboot
