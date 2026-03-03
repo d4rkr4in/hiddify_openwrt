@@ -109,8 +109,8 @@ fi
 echo "  PBR удалён."
 
 # --- Удаление остальных пакетов из install.sh ---
-echo "Удаляем пакеты: unzip, luci-theme-openwrt-2020, kmod-tun, ipset, kmod-ipt-ipset..."
-opkg remove unzip luci-theme-openwrt-2020 kmod-tun nftables ipset kmod-ipt-ipset 2>/dev/null || true
+echo "Удаляем пакеты: unzip, kmod-tun, ipset, kmod-ipt-ipset (curl и тема luci-theme-openwrt-2020 не удаляются)..."
+opkg remove unzip kmod-tun nftables ipset kmod-ipt-ipset 2>/dev/null || true
 
 # --- Откат network: tun0, wan (dns/peerdns) ---
 echo "Откатываем изменения network (tun0, wan dns)..."
@@ -156,7 +156,9 @@ echo "  - убраны задания cron (check_hiddify, get_cidr4, reboot)"
 echo "  - удалены скрипт tun0-routes.sh, сервис и hotplug, ip rule/таблица 200, iptables mangle, ipset; при наличии — nft table tun0_routes"
 echo "  - при наличии: PBR полностью удалён (сервис, конфиг, nft-файлы, luci-app-pbr, pbr)"
 echo "  - откатаны network: интерфейс tun0, wan (peerdns/dns); удалены зона firewall tun и forward lan-tun"
-echo "  - удалены пакеты: unzip, luci-theme-openwrt-2020, xz-utils/xz, kmod-tun, ipset, kmod-ipt-ipset (и pbr при наличии)"
+echo "  - удалены пакеты: unzip, xz-utils/xz, kmod-tun, ipset, kmod-ipt-ipset (и pbr при наличии); curl и тема luci-theme-openwrt-2020 не удаляются"
 echo ""
 
+echo "Перезапуск network..."
+service network restart
 echo "При необходимости перезагрузите роутер вручную."
