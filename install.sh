@@ -8,7 +8,7 @@ set -e
 HIDDIFY_VER="4.0.3"
 HEV_TUNNEL_VER="2.14.4"
 UPX_VER="4.2.4"
-PBR_VER="1.2.0-2"
+PBR_VER="1.2.3-27"
 
 # --- Остальные константы ---
 REPO_RAW="https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main"
@@ -185,8 +185,27 @@ if uci get network.wan6 >/dev/null 2>&1; then
   uci commit network
 fi
 
-# --- Firewall: зону tun и forward lan→tun не добавляем: политика PBR только chain=output,
-# трафик клиентов в tun0 не идёт; добавление зоны ломало интернет на клиентах даже при остановленном PBR.
+# --- Firewall ---
+if ! grep -q "option name 'tun'" /etc/config/firewall 2>/dev/null; then
+  cat >> /etc/config/firewall << 'FW_EOF'
+
+config zone
+	option name 'tun'
+	option forward 'ACCEPT'
+	option output 'ACCEPT'
+	option input 'REJECT'
+	option masq '1'
+	option mtu_fix '1'
+	option device 'tun0'
+	option family 'ipv4'
+
+config forwarding
+	option name 'lan-tun'
+	option dest 'tun'
+	option src 'lan'
+	option family 'ipv4'
+FW_EOF
+fi
 
 # --- Конфиг и init hev-socks5-tunnel ---
 echo "Создаём конфиг hev-socks5-tunnel..."
