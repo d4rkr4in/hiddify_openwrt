@@ -224,6 +224,17 @@ config forwarding
 FW_EOF
 fi
 
+# --- Guest -> tun (если зона guest есть) ---
+if [ "$(uci get firewall.guest 2>/dev/null)" = "zone" ] && ! grep -q "option name 'guest-tun'" /etc/config/firewall 2>/dev/null; then
+  uci set firewall.guest_tun="forwarding"
+  uci set firewall.guest_tun.name="guest-tun"
+  uci set firewall.guest_tun.src="guest"
+  uci set firewall.guest_tun.dest="tun"
+  uci set firewall.guest_tun.family="ipv4"
+  uci commit firewall
+  echo "Добавлено правило firewall: guest -> tun"
+fi
+
 # --- Конфиг и init hev-socks5-tunnel ---
 echo "Создаём конфиг hev-socks5-tunnel..."
 cat > "$HEV_CONF" << 'HEV_YAML_EOF'
