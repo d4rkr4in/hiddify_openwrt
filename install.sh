@@ -302,8 +302,8 @@ echo "PBR установлен. Маршрутизация по списку CID
 
 # --- Перезапуск network ---
 if [ "$1" != "--no-restart" ]; then
-  echo "Перезапуск network через 3 сек (отмена: Ctrl+C). Без перезапуска: $0 --no-restart"
-  sleep 3
+  echo "Перезапуск network через 5 сек (отмена: Ctrl+C). Без перезапуска: $0 --no-restart"
+  sleep 5
   reboot
 else
   echo "Готово. Перезапуск network не выполнен (--no-restart)."
