@@ -17,6 +17,12 @@ SUBSCRIPTION_FILE="/root/hiddify_subscription.url"
 APPCONF="/root/appconf.conf"
 CIDR_FILE="/root/cidr4.txt"
 
+# --- Загрузки: общие параметры curl и проверка файла ---
+CURL_OPTS="--retry 10 --connect-timeout 15 -fL"
+check_download() {
+  [ -n "$1" ] && [ -s "$1" ] || { echo "Ошибка: загрузка не удалась или пустой файл: $1" >&2; exit 1; }
+}
+
 # --- Проверка root ---
 if [ "$(id -u)" -ne 0 ]; then
   echo "Этот скрипт должен быть запущен с правами root" >&2
@@ -59,10 +65,11 @@ command -v xz >/dev/null 2>&1 || opkg install xz 2>/dev/null || true
 USE_UPX=0
 if command -v xz >/dev/null 2>&1; then
   echo "Устанавливаем UPX ${UPX_VER}..."
-  if curl -fL --retry 10 --connect-timeout 10 -o "/tmp/upx-${UPX_VER}-arm64_linux.tar.xz" \
-    "https://github.com/upx/upx/releases/download/v${UPX_VER}/upx-${UPX_VER}-arm64_linux.tar.xz" 2>/dev/null && \
-    xz -dc "/tmp/upx-${UPX_VER}-arm64_linux.tar.xz" | tar -xf - -C /tmp 2>/dev/null && \
-    [ -f "/tmp/upx-${UPX_VER}-arm64_linux/upx" ]; then
+  _upx_arc="/tmp/upx-${UPX_VER}-arm64_linux.tar.xz"
+  if curl $CURL_OPTS -o "$_upx_arc" "https://github.com/upx/upx/releases/download/v${UPX_VER}/upx-${UPX_VER}-arm64_linux.tar.xz" && \
+     [ -s "$_upx_arc" ] && \
+     xz -dc "$_upx_arc" | tar -xf - -C /tmp && \
+     [ -f "/tmp/upx-${UPX_VER}-arm64_linux/upx" ]; then
     mv "/tmp/upx-${UPX_VER}-arm64_linux/upx" /usr/bin/upx
     chmod +x /usr/bin/upx
     USE_UPX=1
@@ -75,9 +82,11 @@ fi
 
 # --- HiddifyCli ---
 echo "Устанавливаем HiddifyCli..."
-curl -fL --retry 10 --connect-timeout 10 -o /tmp/HiddifyCli.tar.gz \
+curl $CURL_OPTS -o /tmp/HiddifyCli.tar.gz \
   "https://github.com/hiddify/hiddify-core/releases/download/v${HIDDIFY_VER}/hiddify-cli-linux-arm64.tar.gz"
+check_download /tmp/HiddifyCli.tar.gz
 tar -xzf /tmp/HiddifyCli.tar.gz -C /tmp
+[ -f /tmp/HiddifyCli ] || { echo "Ошибка: HiddifyCli не найден в архиве" >&2; exit 1; }
 [ "$USE_UPX" = "1" ] && command -v upx >/dev/null 2>&1 && upx -1 /tmp/HiddifyCli 2>/dev/null || true
 mv /tmp/HiddifyCli /usr/bin/
 chmod +x /usr/bin/HiddifyCli
@@ -144,8 +153,9 @@ service HiddifyCli enable
 
 # --- hev-socks5-tunnel (tun2socks) ---
 echo "Устанавливаем hev-socks5-tunnel..."
-curl -fL --retry 10 --connect-timeout 10 -o /tmp/hev-socks5-tunnel-linux-arm64 \
+curl $CURL_OPTS -o /tmp/hev-socks5-tunnel-linux-arm64 \
   "https://github.com/heiher/hev-socks5-tunnel/releases/download/${HEV_TUNNEL_VER}/hev-socks5-tunnel-linux-arm64"
+check_download /tmp/hev-socks5-tunnel-linux-arm64
 mv /tmp/hev-socks5-tunnel-linux-arm64 /usr/bin/hev-socks5-tunnel
 chmod +x /usr/bin/hev-socks5-tunnel
 
@@ -234,8 +244,10 @@ service hev-socks5-tunnel enable
 
 # --- Вспомогательные скрипты ---
 echo "Загружаем get_cidr4.sh и check_hiddify.sh..."
-wget -q -O /usr/bin/get_cidr4.sh "$REPO_RAW/get_cidr4.sh"
-wget -q -O /usr/bin/check_hiddify.sh "$REPO_RAW/check_hiddify.sh"
+curl $CURL_OPTS -o /usr/bin/get_cidr4.sh "$REPO_RAW/get_cidr4.sh"
+check_download /usr/bin/get_cidr4.sh
+curl $CURL_OPTS -o /usr/bin/check_hiddify.sh "$REPO_RAW/check_hiddify.sh"
+check_download /usr/bin/check_hiddify.sh
 chmod +x /usr/bin/get_cidr4.sh /usr/bin/check_hiddify.sh
 sed -i "s|cidr4\.txt|$CIDR_FILE|g" /usr/bin/get_cidr4.sh
 
@@ -251,8 +263,10 @@ echo "Cron: check_hiddify — каждые 2 мин, get_cidr4 + restart PBR —
 
 # --- Установка PBR (mossdef-org) и настройка маршрутизации через tun0 ---
 echo "Устанавливаем PBR и luci-app-pbr..."
-curl -fL --retry 5 --connect-timeout 15 -o /tmp/pbr.ipk "https://github.com/mossdef-org/pbr/releases/download/v${PBR_VER}/pbr-${PBR_VER}_openwrt-24.10_all.ipk"
-curl -fL --retry 5 --connect-timeout 15 -o /tmp/luci-app-pbr.ipk "https://github.com/mossdef-org/luci-app-pbr/releases/download/v${PBR_VER}/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk"
+curl $CURL_OPTS -o /tmp/pbr.ipk "https://github.com/mossdef-org/pbr/releases/download/v${PBR_VER}/pbr-${PBR_VER}_openwrt-24.10_all.ipk"
+check_download /tmp/pbr.ipk
+curl $CURL_OPTS -o /tmp/luci-app-pbr.ipk "https://github.com/mossdef-org/luci-app-pbr/releases/download/v${PBR_VER}/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk"
+check_download /tmp/luci-app-pbr.ipk
 opkg install /tmp/pbr.ipk /tmp/luci-app-pbr.ipk
 
 echo "Настраиваем PBR (интерфейс tun0, список CIDR из $CIDR_FILE, исключение портов 6881-6889, 27015-27050)..."
