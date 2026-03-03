@@ -7,7 +7,7 @@ set -e
 # --- Версии (обновлять здесь) ---
 HIDDIFY_VER="4.0.3"
 HEV_TUNNEL_VER="2.14.4"
-PBR_VER="1.2.2-6"
+PBR_VER="1.2.0-2"
 UPX_VER="4.2.4"
 
 # --- Остальные константы ---
@@ -38,6 +38,15 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# --- Проверка формата ссылки (https://домен/сегмент1/сегмент2[, #фрагмент]) ---
+check_subscription_link() {
+  case "$1" in
+    https://*/*/*) return 0 ;;
+    https://*/*/*#*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 # --- Запрос ссылки на подписку ---
 if [ -f "$SUBSCRIPTION_FILE" ] && [ -s "$SUBSCRIPTION_FILE" ]; then
   read -p "Найдена сохранённая ссылка. Использовать её? [Y/n]: " use_saved
@@ -45,14 +54,22 @@ if [ -f "$SUBSCRIPTION_FILE" ] && [ -s "$SUBSCRIPTION_FILE" ]; then
     [nN]|[nN][oO]) use_saved="" ;;
     *) SUBSCRIPTION_LINK=$(cat "$SUBSCRIPTION_FILE"); use_saved=1 ;;
   esac
+  if [ -n "$use_saved" ] && ! check_subscription_link "$SUBSCRIPTION_LINK"; then
+    echo "Ошибка: сохранённая ссылка неверного формата (ожидается https://домен/сегмент1/сегмент2)" >&2
+    use_saved=""
+  fi
 fi
 if [ -z "$use_saved" ]; then
   while true; do
     read -p "Введите ССЫЛКУ_НА_ПОДПИСКУ: " SUBSCRIPTION_LINK
-    if [ -n "$SUBSCRIPTION_LINK" ]; then
+    if [ -z "$SUBSCRIPTION_LINK" ]; then
+      echo "Ошибка: Ссылка на подписку не может быть пустой" >&2
+      continue
+    fi
+    if check_subscription_link "$SUBSCRIPTION_LINK"; then
       break
     fi
-    echo "Ошибка: Ссылка на подписку не может быть пустой" >&2
+    echo "Ошибка: неверный формат. Пример: https://pvs77.ru/MLgbTgp06Mm66I89/ba6a7ba9-d20a-468a-88b6-bb2ca76119f6" >&2
   done
   printf '%s' "$SUBSCRIPTION_LINK" > "$SUBSCRIPTION_FILE"
 fi
