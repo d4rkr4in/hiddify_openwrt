@@ -8,7 +8,7 @@ set -e
 HIDDIFY_VER="4.0.3"
 HEV_TUNNEL_VER="2.14.4"
 UPX_VER="4.2.4"
-PBR_VER="1.2.3-27"
+PBR_VER="1.2.0-2"
 
 # --- Остальные константы ---
 REPO_RAW="https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main"
