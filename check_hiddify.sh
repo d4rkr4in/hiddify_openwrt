@@ -11,7 +11,6 @@ IP=$(curl --interface tun0 -s --max-time 10 ifconfig.me)
 if [ -z "$IP" ]; then
     MESSAGE="$TIMESTAMP — нет ответа через tun0. Перезапускаю HiddifyCli и hev-socks5-tunnel..."
     /etc/init.d/HiddifyCli restart
-    /etc/init.d/hev-socks5-tunnel restart
 else
     MESSAGE="$TIMESTAMP — tun0 работает. IP: $IP"
 fi
