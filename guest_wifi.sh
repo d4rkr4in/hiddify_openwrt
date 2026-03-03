@@ -1,4 +1,10 @@
-# Configure network
+#!/bin/sh
+# Настройка гостевой Wi‑Fi сети (SSID скрыт)
+# Источник: https://github.com/d4rkr4in/hiddify_openwrt
+
+set -e
+
+# --- Configure network ---
 uci -q delete network.guest_dev
 uci set network.guest_dev="device"
 uci set network.guest_dev.type="bridge"
@@ -11,7 +17,7 @@ uci set network.guest.ipaddr="192.168.3.1/24"
 uci commit network
 service network restart
 
-# Configure wireless
+# --- Configure wireless ---
 WIFI_DEV="$(uci get wireless.@wifi-iface[0].device)"
 uci -q delete wireless.guest
 uci set wireless.guest="wifi-iface"
@@ -20,10 +26,11 @@ uci set wireless.guest.mode="ap"
 uci set wireless.guest.network="guest"
 uci set wireless.guest.ssid="guest"
 uci set wireless.guest.encryption="none"
+uci set wireless.guest.hidden="1"
 uci commit wireless
 wifi reload
 
-# Configure DHCP
+# --- Configure DHCP ---
 uci -q delete dhcp.guest
 uci set dhcp.guest="dhcp"
 uci set dhcp.guest.interface="guest"
@@ -33,7 +40,7 @@ uci set dhcp.guest.leasetime="1h"
 uci commit dhcp
 service dnsmasq restart
 
-# Configure firewall
+# --- Configure firewall ---
 uci -q delete firewall.guest
 uci set firewall.guest="zone"
 uci set firewall.guest.name="guest"
