@@ -69,7 +69,7 @@ if [ -z "$use_saved" ]; then
     if check_subscription_link "$SUBSCRIPTION_LINK"; then
       break
     fi
-    echo "Ошибка: неверный формат. Пример: https://pvs77.ru/MLgbTgp06Mm66I89/ba6a7ba9-d20a-468a-88b6-bb2ca76119f6" >&2
+    echo "Ошибка: неверный формат. Пример: https://pvs77.ru/xxx/xxx" >&2
   done
   printf '%s' "$SUBSCRIPTION_LINK" > "$SUBSCRIPTION_FILE"
 fi
