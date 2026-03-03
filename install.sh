@@ -58,7 +58,7 @@ if [ -z "$use_saved" ]; then
 fi
 
 echo "Установка пакетов..."
-opkg install curl nano unzip xz-utils kmod-tun luci-theme-openwrt-2020
+opkg install curl unzip xz-utils kmod-tun luci-theme-openwrt-2020
 command -v xz >/dev/null 2>&1 || opkg install xz 2>/dev/null || true
 
 # --- UPX (для сжатия HiddifyCli), если доступен xz ---
