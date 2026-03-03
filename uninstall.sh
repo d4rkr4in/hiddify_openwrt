@@ -1,6 +1,6 @@
 #!/bin/sh
 # Полное удаление установки Hiddify + OpenWrt (обратный скрипт к install.sh)
-# Запуск: ./uninstall.sh [--remove-packages] [--no-reboot]
+# Запуск: ./uninstall.sh [--remove-packages]
 
 set -e
 
@@ -155,15 +155,4 @@ echo "  - удалены интерфейс tun0 и зона firewall tun"
 echo "  - удалены пакеты: curl, nano, unzip, luci-theme-openwrt-2020, xz-utils/xz, kmod-tun, ipset, kmod-ipt-ipset (и pbr при наличии)"
 echo ""
 
-# --- Перезагрузка ---
-REBOOT=1
-for arg in "$@"; do
-  [ "$arg" = "--no-reboot" ] && REBOOT=0
-done
-if [ "$REBOOT" = "1" ]; then
-  echo "Перезагрузка через 5 сек (Ctrl+C — отмена)..."
-  sleep 5
-  reboot
-else
-  echo "Перезагрузка не выполнена (--no-reboot). Рекомендуется перезагрузить роутер вручную."
-fi
+echo "При необходимости перезагрузите роутер вручную."
