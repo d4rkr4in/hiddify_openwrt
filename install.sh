@@ -93,7 +93,7 @@ chmod +x /usr/bin/HiddifyCli
 
 cat > /etc/init.d/HiddifyCli << EOF
 #!/bin/sh /etc/rc.common
-START=40
+START=15
 STOP=89
 USE_PROCD=1
 
@@ -226,7 +226,7 @@ cat > /etc/init.d/hev-socks5-tunnel << HEV_INIT_EOF
 #!/bin/sh /etc/rc.common
 
 USE_PROCD=1
-START=45
+START=20
 STOP=89
 
 start_service() {
@@ -297,8 +297,8 @@ uci set pbr."$POLICY_SECTION".interface='tun0'
 uci set pbr."$POLICY_SECTION".dest_addr="file://$CIDR_FILE"
 uci commit pbr
 
-# PBR запускается последним (START=99), чтобы tun0 уже был поднят
-sed -i 's/^START=.*/START=99/' /etc/init.d/pbr 2>/dev/null || true
+# PBR запускается последним (START=100), чтобы tun0 уже был поднят
+sed -i 's/^START=.*/START=100/' /etc/init.d/pbr 2>/dev/null || true
 service pbr enable
 echo "PBR установлен. Маршрутизация по списку CIDR через tun0."
 
