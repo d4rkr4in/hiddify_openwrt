@@ -15,12 +15,19 @@ log_line() {
   printf '%s [%s] %s\n' "$(ts)" "$_lvl" "$*" | tee -a "$LOG_FILE"
 }
 step() {
+  _xtrace=0
+  case "$-" in
+    *x*) _xtrace=1; set +x ;;
+  esac
+
   STEP=$((STEP + 1))
   if [ -t 1 ]; then
     printf '\n\033[1;36m==== [%02d] %s ====\033[0m\n' "$STEP" "$*" | tee -a "$LOG_FILE"
   else
     printf '\n==== [%02d] %s ====\n' "$STEP" "$*" | tee -a "$LOG_FILE"
   fi
+
+  [ "$_xtrace" -eq 1 ] && set -x
 }
 info() { log_line INFO "$*"; }
 success() { log_line OK "$*"; }
