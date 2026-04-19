@@ -27,14 +27,7 @@ fi
 log_line() {
   _lvl="$1"
   shift
-  _color=""
-  case "$_lvl" in
-    OK) _color="$C_GREEN" ;;
-    WARN) _color="$C_YELLOW" ;;
-    ERR) _color="$C_RED" ;;
-    INFO) _color="$C_CYAN" ;;
-  esac
-  printf '%s %s[%s]%s %s\n' "$(ts)" "$_color" "$_lvl" "$C_RESET" "$*" | tee -a "$LOG_FILE"
+  printf '%s [%s] %s\n' "$(ts)" "$_lvl" "$*" | tee -a "$LOG_FILE"
 }
 step() {
   STEP=$((STEP + 1))
