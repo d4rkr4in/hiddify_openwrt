@@ -19,10 +19,12 @@ echo "=== Удаление Hiddify и связанных компонентов 
 echo "Останавливаем сервисы..."
 service HiddifyCli stop 2>/dev/null || true
 service hev-socks5-tunnel stop 2>/dev/null || true
+service https-dns-proxy stop 2>/dev/null || true
 service tun0-routes stop 2>/dev/null || true
 service tun2socks stop 2>/dev/null || true
 service HiddifyCli disable 2>/dev/null || true
 service hev-socks5-tunnel disable 2>/dev/null || true
+service https-dns-proxy disable 2>/dev/null || true
 service tun0-routes disable 2>/dev/null || true
 service tun2socks disable 2>/dev/null || true
 # Принудительно завершаем процессы (иначе rm даёт "Stale file handle" / "Text file busy")
@@ -108,6 +110,16 @@ if [ -f /etc/rc.local ]; then
 fi
 echo "  PBR удалён."
 
+# --- https-dns-proxy: очистка dns forwards и удаление пакетов ---
+echo "Удаляем https-dns-proxy и очищаем DNS forwards..."
+if uci get dhcp.@dnsmasq[0] >/dev/null 2>&1; then
+  while uci -q delete dhcp.@dnsmasq[0].server[0]; do :; done
+  uci commit dhcp 2>/dev/null || true
+fi
+rm -f /etc/config/https-dns-proxy 2>/dev/null || true
+opkg remove luci-app-https-dns-proxy --force-depends 2>/dev/null || true
+opkg remove https-dns-proxy --force-depends 2>/dev/null || true
+
 # --- Удаление остальных пакетов из install.sh ---
 echo "Удаляем пакеты: unzip, kmod-tun, ipset, kmod-ipt-ipset (curl и тема luci-theme-openwrt-2020 не удаляются)..."
 opkg remove unzip kmod-tun nftables ipset kmod-ipt-ipset 2>/dev/null || true
@@ -155,8 +167,9 @@ echo "  - удалены $APPCONF, $CIDR_FILE (файл подписки $SUBSCR
 echo "  - убраны задания cron (check_hiddify, get_cidr4, reboot)"
 echo "  - удалены скрипт tun0-routes.sh, сервис и hotplug, ip rule/таблица 200, iptables mangle, ipset; при наличии — nft table tun0_routes"
 echo "  - при наличии: PBR полностью удалён (сервис, конфиг, nft-файлы, luci-app-pbr, pbr)"
+echo "  - удалены https-dns-proxy и luci-app-https-dns-proxy; DNS forwards в dnsmasq очищены"
 echo "  - откатаны network: интерфейс tun0, wan (peerdns/dns); удалены зона firewall tun и forward lan-tun"
-echo "  - удалены пакеты: unzip, xz-utils/xz, kmod-tun, ipset, kmod-ipt-ipset (и pbr при наличии); curl и тема luci-theme-openwrt-2020 не удаляются"
+echo "  - удалены пакеты: unzip, xz-utils/xz, kmod-tun, ipset, kmod-ipt-ipset, https-dns-proxy, luci-app-https-dns-proxy (и pbr при наличии); curl и тема luci-theme-openwrt-2020 не удаляются"
 echo ""
 
 echo "Перезапуск network..."
