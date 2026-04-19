@@ -242,6 +242,14 @@ if uci get network.wan6 >/dev/null 2>&1; then
   uci commit network
 fi
 
+# --- LAN: отключаем Local IPv6 DNS server ---
+if uci get dhcp.lan >/dev/null 2>&1; then
+  # На разных версиях OpenWrt используется ra_dns или dns_service.
+  uci set dhcp.lan.ra_dns='0' 2>/dev/null || true
+  uci set dhcp.lan.dns_service='0' 2>/dev/null || true
+  uci commit dhcp 2>/dev/null || true
+fi
+
 # --- Firewall ---
 if ! grep -q "option name 'tun'" /etc/config/firewall 2>/dev/null; then
   cat >> /etc/config/firewall << 'FW_EOF'
