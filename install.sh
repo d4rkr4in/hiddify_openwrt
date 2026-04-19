@@ -335,7 +335,7 @@ echo "Устанавливаем https-dns-proxy и luci-app-https-dns-proxy..."
 opkg install https-dns-proxy luci-app-https-dns-proxy
 
 /etc/init.d/https-dns-proxy enable
-/etc/init.d/https-dns-proxy restart 2>/dev/null || /etc/init.d/https-dns-proxy start
+/etc/init.d/https-dns-proxy restart 2>/dev/null || /etc/init.d/https-dns-proxy start 2>/dev/null || true
 
 # --- Перезапуск network ---
 echo "Перезагрузка через 5 сек (отмена: Ctrl+C)"
