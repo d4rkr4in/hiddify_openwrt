@@ -188,26 +188,6 @@ config interface 'tun0'
 NET_EOF
 fi
 
-# --- DNS на WAN: 1.1.1.1 + установка https-dns-proxy ---
-if uci get network.wan >/dev/null 2>&1; then
-  uci set network.wan.peerdns='0'
-  uci delete network.wan.dns 2>/dev/null || true
-  uci add_list network.wan.dns='1.1.1.1'
-  uci commit network
-fi
-
-# --- Очистка всех DNS forwards в dnsmasq перед https-dns-proxy ---
-if uci get dhcp.@dnsmasq[0] >/dev/null 2>&1; then
-  while uci -q delete dhcp.@dnsmasq[0].server[0]; do :; done
-  uci commit dhcp
-fi
-
-echo "Устанавливаем https-dns-proxy и luci-app-https-dns-proxy..."
-opkg install https-dns-proxy luci-app-https-dns-proxy
-
-/etc/init.d/https-dns-proxy enable
-/etc/init.d/https-dns-proxy restart 2>/dev/null || /etc/init.d/https-dns-proxy start
-
 # --- Удаление интерфейса wan6 (если есть) ---
 if uci get network.wan6 >/dev/null 2>&1; then
   uci delete network.wan6
@@ -340,6 +320,22 @@ uci commit pbr
 sed -i 's/^START=.*/START=100/' /etc/init.d/pbr 2>/dev/null || true
 service pbr enable
 echo "PBR установлен. Маршрутизация по списку CIDR через tun0."
+
+# --- Очистка всех DNS forwards в dnsmasq перед https-dns-proxy ---
+if uci get dhcp.@dnsmasq[0] >/dev/null 2>&1; then
+  i=0
+  while uci get dhcp.@dnsmasq[$i] >/dev/null 2>&1; do
+    uci -q delete dhcp.@dnsmasq[$i].server
+    i=$((i + 1))
+  done
+  uci commit dhcp
+fi
+
+echo "Устанавливаем https-dns-proxy и luci-app-https-dns-proxy..."
+opkg install https-dns-proxy luci-app-https-dns-proxy
+
+/etc/init.d/https-dns-proxy enable
+/etc/init.d/https-dns-proxy restart 2>/dev/null || /etc/init.d/https-dns-proxy start
 
 # --- Перезапуск network ---
 echo "Перезагрузка через 5 сек (отмена: Ctrl+C)"
