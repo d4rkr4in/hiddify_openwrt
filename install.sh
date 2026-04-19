@@ -4,6 +4,24 @@
 
 set -e
 
+# --- Логирование ---
+LOG_FILE="/tmp/hiddify-install.log"
+STEP=0
+
+ts() { date '+%H:%M:%S'; }
+log_line() {
+  _lvl="$1"
+  shift
+  printf '%s [%s] %s\n' "$(ts)" "$_lvl" "$*" | tee -a "$LOG_FILE"
+}
+step() {
+  STEP=$((STEP + 1))
+  printf '\n==== [%02d] %s ====\n' "$STEP" "$*" | tee -a "$LOG_FILE"
+}
+info() { log_line INFO "$*"; }
+success() { log_line OK "$*"; }
+warn() { log_line WARN "$*" >&2; }
+
 # --- Версии (обновлять здесь) ---
 HIDDIFY_VER="4.0.3"
 HEV_TUNNEL_VER="2.14.4"
@@ -20,14 +38,17 @@ CIDR_FILE="/root/cidr4.txt"
 # --- Загрузки: общие параметры curl и проверка файла ---
 CURL_OPTS="--retry 10 --connect-timeout 15 -fL"
 check_download() {
-  [ -n "$1" ] && [ -s "$1" ] || { echo "Ошибка: загрузка не удалась или пустой файл: $1" >&2; exit 1; }
+  [ -n "$1" ] && [ -s "$1" ] || { log_line ERR "Загрузка не удалась или файл пустой: $1" >&2; exit 1; }
 }
 
 # --- Проверка root ---
 if [ "$(id -u)" -ne 0 ]; then
-  echo "Этот скрипт должен быть запущен с правами root" >&2
+  log_line ERR "Этот скрипт должен быть запущен с правами root" >&2
   exit 1
 fi
+
+echo "" > "$LOG_FILE"
+info "Лог установки: $LOG_FILE"
 
 # --- Очистка при выходе ---
 cleanup() {
@@ -74,14 +95,17 @@ if [ -z "$use_saved" ]; then
   printf '%s' "$SUBSCRIPTION_LINK" > "$SUBSCRIPTION_FILE"
 fi
 
-echo "Установка пакетов..."
-opkg install curl unzip xz-utils kmod-tun luci-theme-openwrt-2020
+step "Установка базовых пакетов"
+opkg install curl unzip xz-utils kmod-tun https-dns-proxy luci-app-https-dns-proxy luci-theme-openwrt-2020
 command -v xz >/dev/null 2>&1 || opkg install xz 2>/dev/null || true
+/etc/init.d/https-dns-proxy enable
+success "Базовые пакеты установлены"
 
 # --- UPX (для сжатия HiddifyCli), если доступен xz ---
 USE_UPX=0
 if command -v xz >/dev/null 2>&1; then
-  echo "Устанавливаем UPX ${UPX_VER}..."
+  step "Установка UPX (опционально)"
+  info "Пробуем установить UPX ${UPX_VER}"
   _upx_arc="/tmp/upx-${UPX_VER}-arm64_linux.tar.xz"
   if curl $CURL_OPTS -o "$_upx_arc" "https://github.com/upx/upx/releases/download/v${UPX_VER}/upx-${UPX_VER}-arm64_linux.tar.xz" && \
      [ -s "$_upx_arc" ] && \
@@ -91,14 +115,14 @@ if command -v xz >/dev/null 2>&1; then
     chmod +x /usr/bin/upx
     USE_UPX=1
   else
-    echo "UPX не установлен (нет xz или ошибка загрузки), HiddifyCli без сжатия." >&2
+    warn "UPX не установлен (нет xz или ошибка загрузки), HiddifyCli будет без сжатия."
   fi
 else
-  echo "xz не найден, пропускаем UPX. HiddifyCli будет без сжатия." >&2
+  warn "xz не найден, пропускаем UPX. HiddifyCli будет без сжатия."
 fi
 
 # --- HiddifyCli ---
-echo "Устанавливаем HiddifyCli..."
+step "Установка HiddifyCli"
 curl $CURL_OPTS -o /tmp/HiddifyCli.tar.gz \
   "https://github.com/hiddify/hiddify-core/releases/download/v${HIDDIFY_VER}/hiddify-cli-linux-arm64.tar.gz"
 check_download /tmp/HiddifyCli.tar.gz
@@ -127,7 +151,8 @@ start_service() {
 EOF
 
 # --- appconf.conf (оптимизировано под OpenWrt: меньше логов, реже проверки, безопасный MTU) ---
-echo "Создаём конфигурацию..."
+step "Настройка HiddifyCli"
+info "Создаём appconf.conf"
 cat > "$APPCONF" << 'APPCONF_EOF'
 {
   "region": "other",
@@ -139,7 +164,7 @@ cat > "$APPCONF" << 'APPCONF_EOF'
   "ipv6-mode": "ipv4_only",
   "remote-dns-address": "udp://1.1.1.1",
   "remote-dns-domain-strategy": "",
-  "direct-dns-address": "tls://1.1.1.1",
+  "direct-dns-address": "https://1.1.1.1/dns-query",
   "direct-dns-domain-strategy": "",
   "mixed-port": 12334,
   "tproxy-port": 12335,
@@ -167,9 +192,10 @@ chmod 755 /etc/init.d/HiddifyCli
 service HiddifyCli start
 service HiddifyCli status
 service HiddifyCli enable
+success "HiddifyCli установлен и включён"
 
 # --- hev-socks5-tunnel (tun2socks) ---
-echo "Устанавливаем hev-socks5-tunnel..."
+step "Установка hev-socks5-tunnel"
 curl $CURL_OPTS -o /tmp/hev-socks5-tunnel-linux-arm64 \
   "https://github.com/heiher/hev-socks5-tunnel/releases/download/${HEV_TUNNEL_VER}/hev-socks5-tunnel-linux-arm64"
 check_download /tmp/hev-socks5-tunnel-linux-arm64
@@ -224,11 +250,12 @@ if [ "$(uci get firewall.guest 2>/dev/null)" = "zone" ] && ! grep -q "option nam
   uci set firewall.guest_tun.dest="tun"
   uci set firewall.guest_tun.family="ipv4"
   uci commit firewall
-  echo "Добавлено правило firewall: guest -> tun"
+  info "Добавлено правило firewall: guest -> tun"
 fi
 
 # --- Конфиг и init hev-socks5-tunnel ---
-echo "Создаём конфиг hev-socks5-tunnel..."
+step "Настройка сети, firewall и tun"
+info "Создаём конфиг hev-socks5-tunnel"
 cat > "$HEV_CONF" << 'HEV_YAML_EOF'
 tunnel:
   name: tun0
@@ -261,9 +288,11 @@ HEV_INIT_EOF
 chmod 755 /etc/init.d/hev-socks5-tunnel
 service hev-socks5-tunnel start
 service hev-socks5-tunnel enable
+success "hev-socks5-tunnel установлен и включён"
 
 # --- Вспомогательные скрипты ---
-echo "Загружаем get_cidr4.sh и check_hiddify.sh..."
+step "Вспомогательные скрипты и cron"
+info "Загружаем get_cidr4.sh и check_hiddify.sh"
 curl $CURL_OPTS -o /usr/bin/get_cidr4.sh "$REPO_RAW/get_cidr4.sh"
 check_download /usr/bin/get_cidr4.sh
 curl $CURL_OPTS -o /usr/bin/check_hiddify.sh "$REPO_RAW/check_hiddify.sh"
@@ -276,21 +305,22 @@ CRON_CHECK="*/2 * * * * /usr/bin/check_hiddify.sh"
 CRON_REBOOT="0 5 * * * /sbin/reboot"
 CRON_CIDR="0 4 * * * /usr/bin/get_cidr4.sh && /etc/init.d/pbr restart"
 ( crontab -l 2>/dev/null | grep -v check_hiddify.sh | grep -v "get_cidr4.sh" | grep -v "0 5 \* \* \* /sbin/reboot" || true; echo "$CRON_CHECK"; echo "$CRON_REBOOT"; echo "$CRON_CIDR" ) | crontab -
-echo "Cron: check_hiddify — каждые 2 мин, get_cidr4 + restart PBR — 04:00, reboot — 05:00."
+info "Cron: check_hiddify — каждые 2 мин, get_cidr4 + restart PBR — 04:00, reboot — 05:00."
 
 # --- CIDR: формируем список для PBR ---
 /usr/bin/get_cidr4.sh || true
 
 # --- Установка PBR (mossdef-org) и настройка маршрутизации через tun0 ---
-echo "Устанавливаем PBR и luci-app-pbr..."
+step "Установка и настройка PBR"
+info "Устанавливаем PBR и luci-app-pbr"
 curl $CURL_OPTS -o /tmp/pbr.ipk "https://github.com/mossdef-org/pbr/releases/download/v${PBR_VER}/pbr-${PBR_VER}_openwrt-24.10_all.ipk"
 check_download /tmp/pbr.ipk
 curl $CURL_OPTS -o /tmp/luci-app-pbr.ipk "https://github.com/mossdef-org/luci-app-pbr/releases/download/v${PBR_VER}/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk"
 check_download /tmp/luci-app-pbr.ipk
 opkg install /tmp/pbr.ipk /tmp/luci-app-pbr.ipk
 
-echo "Настраиваем PBR (интерфейс tun0, список CIDR из $CIDR_FILE, исключение портов 6881-6889, 27015-27050)..."
-echo "Очищаем все правила PBR (policy, dns_policy, include)..."
+info "Настраиваем PBR (интерфейс tun0, CIDR: $CIDR_FILE, исключение портов 6881-6889, 27015-27050)"
+info "Очищаем все правила PBR (policy, dns_policy, include)"
 while uci delete pbr.@policy[0] 2>/dev/null; do :; done
 while uci delete pbr.@dns_policy[0] 2>/dev/null; do :; done
 while uci delete pbr.@include[0] 2>/dev/null; do :; done
@@ -319,7 +349,15 @@ uci commit pbr
 # PBR запускается последним (START=100), чтобы tun0 уже был поднят
 sed -i 's/^START=.*/START=100/' /etc/init.d/pbr 2>/dev/null || true
 service pbr enable
-echo "PBR установлен. Маршрутизация по списку CIDR через tun0."
+success "PBR установлен. Маршрутизация по списку CIDR через tun0"
+
+# --- DNS на WAN: 1.1.1.1 ---
+if uci get network.wan >/dev/null 2>&1; then
+  uci set network.wan.peerdns='0'
+  uci delete network.wan.dns 2>/dev/null || true
+  uci add_list network.wan.dns='1.1.1.1'
+  uci commit network
+fi
 
 # --- Очистка всех DNS forwards в dnsmasq перед https-dns-proxy ---
 if uci get dhcp.@dnsmasq[0] >/dev/null 2>&1; then
@@ -331,12 +369,9 @@ if uci get dhcp.@dnsmasq[0] >/dev/null 2>&1; then
   uci commit dhcp
 fi
 
-echo "Устанавливаем https-dns-proxy и luci-app-https-dns-proxy..."
-opkg install https-dns-proxy luci-app-https-dns-proxy
-
-/etc/init.d/https-dns-proxy enable
-
 # --- Перезапуск network ---
-echo "Перезагрузка через 5 сек (отмена: Ctrl+C)"
+step "Завершение установки"
+success "Установка завершена успешно"
+info "Перезагрузка через 5 сек (отмена: Ctrl+C)"
 sleep 5
 reboot
