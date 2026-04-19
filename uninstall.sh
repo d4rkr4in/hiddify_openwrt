@@ -113,7 +113,11 @@ echo "  PBR удалён."
 # --- https-dns-proxy: очистка dns forwards и удаление пакетов ---
 echo "Удаляем https-dns-proxy и очищаем DNS forwards..."
 if uci get dhcp.@dnsmasq[0] >/dev/null 2>&1; then
-  while uci -q delete dhcp.@dnsmasq[0].server[0]; do :; done
+  i=0
+  while uci get dhcp.@dnsmasq[$i] >/dev/null 2>&1; do
+    uci -q delete dhcp.@dnsmasq[$i].server
+    i=$((i + 1))
+  done
   uci commit dhcp 2>/dev/null || true
 fi
 rm -f /etc/config/https-dns-proxy 2>/dev/null || true
