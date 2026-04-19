@@ -9,14 +9,36 @@ LOG_FILE="/tmp/hiddify-install.log"
 STEP=0
 
 ts() { date '+%H:%M:%S'; }
+if [ -t 1 ]; then
+  C_RESET="$(printf '\033[0m')"
+  C_BOLD="$(printf '\033[1m')"
+  C_CYAN="$(printf '\033[36m')"
+  C_GREEN="$(printf '\033[32m')"
+  C_YELLOW="$(printf '\033[33m')"
+  C_RED="$(printf '\033[31m')"
+else
+  C_RESET=""
+  C_BOLD=""
+  C_CYAN=""
+  C_GREEN=""
+  C_YELLOW=""
+  C_RED=""
+fi
 log_line() {
   _lvl="$1"
   shift
-  printf '%s [%s] %s\n' "$(ts)" "$_lvl" "$*" | tee -a "$LOG_FILE"
+  _color=""
+  case "$_lvl" in
+    OK) _color="$C_GREEN" ;;
+    WARN) _color="$C_YELLOW" ;;
+    ERR) _color="$C_RED" ;;
+    INFO) _color="$C_CYAN" ;;
+  esac
+  printf '%s %s[%s]%s %s\n' "$(ts)" "$_color" "$_lvl" "$C_RESET" "$*" | tee -a "$LOG_FILE"
 }
 step() {
   STEP=$((STEP + 1))
-  printf '\n==== [%02d] %s ====\n' "$STEP" "$*" | tee -a "$LOG_FILE"
+  printf '\n%s%s==== [%02d] %s ====%s\n' "$C_BOLD" "$C_CYAN" "$STEP" "$*" "$C_RESET" | tee -a "$LOG_FILE"
 }
 info() { log_line INFO "$*"; }
 success() { log_line OK "$*"; }
