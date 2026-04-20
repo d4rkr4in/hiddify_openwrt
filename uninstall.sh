@@ -159,7 +159,7 @@ echo "Удаляем https-dns-proxy и очищаем DNS forwards..."
 if uci get dhcp.@dnsmasq[0] >/dev/null 2>&1; then
   i=0
   while uci get dhcp.@dnsmasq[$i] >/dev/null 2>&1; do
-    uci -q delete dhcp.@dnsmasq[$i].server
+    uci -q delete dhcp.@dnsmasq[$i].server 2>/dev/null || true
     i=$((i + 1))
   done
   uci -q add_list dhcp.@dnsmasq[0].server='1.1.1.1'
