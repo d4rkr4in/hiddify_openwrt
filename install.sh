@@ -6,8 +6,9 @@ set -e
 
 # --- Совместимость пакетного менеджера: opkg -> apk ---
 opkg() {
-  if command -v opkg >/dev/null 2>&1; then
-    command opkg "$@"
+  _opkg_bin="$(command -v opkg 2>/dev/null || true)"
+  if [ -n "$_opkg_bin" ] && [ "${_opkg_bin#*/}" != "$_opkg_bin" ]; then
+    "$_opkg_bin" "$@"
     return $?
   fi
 
