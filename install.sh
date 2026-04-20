@@ -376,11 +376,17 @@ info "Cron: check_hiddify — каждые 2 мин, get_cidr4 + restart PBR —
 # --- Установка PBR (mossdef-org) и настройка маршрутизации через tun0 ---
 step "Установка и настройка PBR"
 info "Устанавливаем PBR и luci-app-pbr"
-curl $CURL_OPTS -o /tmp/pbr.ipk "https://github.com/mossdef-org/pbr/releases/download/v${PBR_VER}/pbr-${PBR_VER}_openwrt-24.10_all.ipk"
-check_download /tmp/pbr.ipk
-curl $CURL_OPTS -o /tmp/luci-app-pbr.ipk "https://github.com/mossdef-org/luci-app-pbr/releases/download/v${PBR_VER}/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk"
-check_download /tmp/luci-app-pbr.ipk
-opkg install /tmp/pbr.ipk /tmp/luci-app-pbr.ipk
+_opkg_bin="$(command -v opkg 2>/dev/null || true)"
+if [ -n "$_opkg_bin" ] && [ "${_opkg_bin#*/}" != "$_opkg_bin" ]; then
+  curl $CURL_OPTS -o /tmp/pbr.ipk "https://github.com/mossdef-org/pbr/releases/download/v${PBR_VER}/pbr-${PBR_VER}_openwrt-24.10_all.ipk"
+  check_download /tmp/pbr.ipk
+  curl $CURL_OPTS -o /tmp/luci-app-pbr.ipk "https://github.com/mossdef-org/luci-app-pbr/releases/download/v${PBR_VER}/luci-app-pbr-${PBR_VER}_openwrt-24.10_all.ipk"
+  check_download /tmp/luci-app-pbr.ipk
+  opkg install /tmp/pbr.ipk /tmp/luci-app-pbr.ipk
+else
+  # apk не поддерживает формат .ipk, поэтому ставим пакеты из apk-репозитория.
+  opkg install pbr luci-app-pbr
+fi
 
 info "Настраиваем PBR (интерфейс tun0, CIDR: $CIDR_FILE, исключение портов 6881-6889, 27015-27050)"
 info "Очищаем все правила PBR (policy, dns_policy, include)"
