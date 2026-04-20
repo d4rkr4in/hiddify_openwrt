@@ -6,8 +6,9 @@ set -e
 
 # --- Совместимость пакетного менеджера: opkg -> apk ---
 opkg() {
-  if command -v opkg >/dev/null 2>&1; then
-    command opkg "$@"
+  _opkg_bin="$(command -v opkg 2>/dev/null || true)"
+  if [ -n "$_opkg_bin" ] && [ "${_opkg_bin#*/}" != "$_opkg_bin" ]; then
+    "$_opkg_bin" "$@"
     return $?
   fi
 
@@ -18,10 +19,28 @@ opkg() {
 
   _op="$1"
   shift || true
+  _apk_args=""
+  _apk_allow_untrusted=0
+  for _arg in "$@"; do
+    case "$_arg" in
+      --force-*) continue ;;
+      *.ipk|*.apk)
+        _apk_allow_untrusted=1
+        _apk_args="$_apk_args $_arg"
+        ;;
+      *) _apk_args="$_apk_args $_arg" ;;
+    esac
+  done
   case "$_op" in
-    install) apk add "$@" ;;
-    remove) apk del "$@" ;;
-    update) apk update "$@" ;;
+    install)
+      if [ "$_apk_allow_untrusted" -eq 1 ]; then
+        apk add --allow-untrusted $_apk_args
+      else
+        apk add $_apk_args
+      fi
+      ;;
+    remove) apk del $_apk_args ;;
+    update) apk update $_apk_args ;;
     *)
       echo "Ошибка: неподдерживаемая команда opkg для apk-wrapper: $_op" >&2
       return 1
