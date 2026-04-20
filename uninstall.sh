@@ -4,6 +4,31 @@
 
 set -e
 
+# --- Совместимость пакетного менеджера: opkg -> apk ---
+opkg() {
+  if command -v opkg >/dev/null 2>&1; then
+    command opkg "$@"
+    return $?
+  fi
+
+  if ! command -v apk >/dev/null 2>&1; then
+    echo "Ошибка: не найден ни opkg, ни apk" >&2
+    return 127
+  fi
+
+  _op="$1"
+  shift || true
+  case "$_op" in
+    install) apk add "$@" ;;
+    remove) apk del "$@" ;;
+    update) apk update "$@" ;;
+    *)
+      echo "Ошибка: неподдерживаемая команда opkg для apk-wrapper: $_op" >&2
+      return 1
+      ;;
+  esac
+}
+
 SUBSCRIPTION_FILE="/root/hiddify_subscription.url"
 APPCONF="/root/appconf.conf"
 CIDR_FILE="/root/cidr4.txt"
