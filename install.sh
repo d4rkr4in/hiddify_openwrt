@@ -4,6 +4,19 @@
 
 set -e
 
+# --- Версии (обновлять здесь) ---
+HIDDIFY_VER="4.0.3"
+HEV_TUNNEL_VER="2.14.4"
+PBR_VER="1.2.2-6"
+UPX_VER="4.2.4"
+
+# --- Остальные константы ---
+REPO_RAW="https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main"
+HEV_CONF="/etc/hev-socks5-tunnel.yml"
+SUBSCRIPTION_FILE="/root/hiddify_subscription.url"
+APPCONF="/root/appconf.conf"
+CIDR_FILE="/root/cidr4.txt"
+
 # --- Совместимость пакетного менеджера: opkg -> apk ---
 opkg() {
   _opkg_bin="$(command -v opkg 2>/dev/null || true)"
@@ -76,19 +89,6 @@ step() {
 info() { log_line INFO "$*"; }
 success() { log_line OK "$*"; }
 warn() { log_line WARN "$*" >&2; }
-
-# --- Версии (обновлять здесь) ---
-HIDDIFY_VER="3.1.4"
-HEV_TUNNEL_VER="2.14.4"
-PBR_VER="1.2.2-6"
-UPX_VER="4.2.4"
-
-# --- Остальные константы ---
-REPO_RAW="https://raw.githubusercontent.com/d4rkr4in/hiddify_openwrt/refs/heads/main"
-HEV_CONF="/etc/hev-socks5-tunnel.yml"
-SUBSCRIPTION_FILE="/root/hiddify_subscription.url"
-APPCONF="/root/appconf.conf"
-CIDR_FILE="/root/cidr4.txt"
 
 # --- Загрузки: общие параметры curl и проверка файла ---
 CURL_OPTS="--retry 10 --connect-timeout 15 -fL"
