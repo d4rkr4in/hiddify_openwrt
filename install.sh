@@ -78,7 +78,7 @@ success() { log_line OK "$*"; }
 warn() { log_line WARN "$*" >&2; }
 
 # --- Версии (обновлять здесь) ---
-HIDDIFY_VER="4.0.3"
+HIDDIFY_VER="3.1.8"
 HEV_TUNNEL_VER="2.14.4"
 PBR_VER="1.2.2-6"
 UPX_VER="4.2.4"
