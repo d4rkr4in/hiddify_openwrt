@@ -6,8 +6,15 @@ set -e
 
 # --- Совместимость пакетного менеджера: opkg -> apk ---
 opkg() {
-  _opkg_bin="$(command -v opkg 2>/dev/null || true)"
-  if [ -n "$_opkg_bin" ] && [ "${_opkg_bin#*/}" != "$_opkg_bin" ]; then
+  # Нельзя использовать command -v opkg внутри этой функции — вернётся сама функция, не /bin/opkg.
+  _opkg_bin=""
+  for _opkg_cand in /sbin/opkg /usr/sbin/opkg /bin/opkg /usr/bin/opkg; do
+    if [ -x "$_opkg_cand" ]; then
+      _opkg_bin="$_opkg_cand"
+      break
+    fi
+  done
+  if [ -n "$_opkg_bin" ]; then
     "$_opkg_bin" "$@"
     return $?
   fi
@@ -146,9 +153,8 @@ rm -f /etc/config/pbr 2>/dev/null || true
 # Откат опции dhcp, которую мог требовать PBR
 uci delete dhcp.lan.force 2>/dev/null || true
 uci commit dhcp 2>/dev/null || true
-# Сначала luci-app-pbr, затем pbr
-opkg remove luci-app-pbr --force-depends 2>/dev/null || true
-opkg remove pbr --force-depends 2>/dev/null || true
+# Одной командой: порядок зависимостей обработает opkg/apk
+opkg remove luci-app-pbr pbr --force-depends 2>/dev/null || true
 if [ -f /etc/rc.local ]; then
   sed -i '/pbr start/d' /etc/rc.local
 fi
